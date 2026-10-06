@@ -214,8 +214,9 @@ so `joint` and `synthesizer` slot in later.
 ### `dialogic/trace.py`
 
 `Tracer(run_dir)` provides `call()`, `turn()`, `decision()`, `problem()` and
-`prompt(hash, messages)`. Each one appends one JSON line and flushes. It is
-safe under asyncio because there is a single writer task fed by a queue.
+`prompt(hash, messages)`. Each one appends one JSON line and flushes. Writes
+happen on the event-loop thread, so rows never interleave and a crash keeps
+everything written so far.
 
 ### `evals/`
 
