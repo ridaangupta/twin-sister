@@ -1,0 +1,152 @@
+{
+  "run_id": "20261006T161849Z_calibrate_synthetic",
+  "model": "gpt-5.6-luna",
+  "n_per_level": 30,
+  "budget": 32000,
+  "seed": 1000,
+  "levels": [
+    {
+      "n_ops": 16,
+      "knobs": {
+        "n_ops": 16,
+        "n_distractors": 8,
+        "n_reverse": 1,
+        "p_total": 0.2,
+        "shuffle": true
+      },
+      "n": 30,
+      "errors": 0,
+      "accuracy": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "generated_tokens_median": 1226.0,
+      "generated_tokens_mean": 1143.4,
+      "reasoning_tokens_median": 983.5,
+      "truncated": 0,
+      "no_answer": 0
+    },
+    {
+      "n_ops": 24,
+      "knobs": {
+        "n_ops": 24,
+        "n_distractors": 12,
+        "n_reverse": 1,
+        "p_total": 0.2,
+        "shuffle": true
+      },
+      "n": 30,
+      "errors": 0,
+      "accuracy": 0.9666666666666667,
+      "ci95": [
+        0.9,
+        1.0
+      ],
+      "generated_tokens_median": 1780.5,
+      "generated_tokens_mean": 1686.2333333333333,
+      "reasoning_tokens_median": 1536.0,
+      "truncated": 0,
+      "no_answer": 0
+    },
+    {
+      "n_ops": 32,
+      "knobs": {
+        "n_ops": 32,
+        "n_distractors": 16,
+        "n_reverse": 1,
+        "p_total": 0.2,
+        "shuffle": true
+      },
+      "n": 30,
+      "errors": 0,
+      "accuracy": 0.9666666666666667,
+      "ci95": [
+        0.9,
+        1.0
+      ],
+      "generated_tokens_median": 2414.0,
+      "generated_tokens_mean": 2462.2,
+      "reasoning_tokens_median": 2048.0,
+      "truncated": 0,
+      "no_answer": 0
+    },
+    {
+      "n_ops": 40,
+      "knobs": {
+        "n_ops": 40,
+        "n_distractors": 20,
+        "n_reverse": 1,
+        "p_total": 0.2,
+        "shuffle": true
+      },
+      "n": 30,
+      "errors": 0,
+      "accuracy": 0.9,
+      "ci95": [
+        0.7666666666666667,
+        1.0
+      ],
+      "generated_tokens_median": 3722.0,
+      "generated_tokens_mean": 3870.5666666666666,
+      "reasoning_tokens_median": 3072.0,
+      "truncated": 0,
+      "no_answer": 0
+    },
+    {
+      "n_ops": 48,
+      "knobs": {
+        "n_ops": 48,
+        "n_distractors": 24,
+        "n_reverse": 1,
+        "p_total": 0.2,
+        "shuffle": true
+      },
+      "n": 30,
+      "errors": 0,
+      "accuracy": 0.8333333333333334,
+      "ci95": [
+        0.7,
+        0.9666666666666667
+      ],
+      "generated_tokens_median": 4994.5,
+      "generated_tokens_mean": 4800.633333333333,
+      "reasoning_tokens_median": 4268.0,
+      "truncated": 0,
+      "no_answer": 1
+    },
+    {
+      "n_ops": 64,
+      "knobs": {
+        "n_ops": 64,
+        "n_distractors": 32,
+        "n_reverse": 1,
+        "p_total": 0.2,
+        "shuffle": true
+      },
+      "n": 30,
+      "errors": 0,
+      "accuracy": 0.5,
+      "ci95": [
+        0.3333333333333333,
+        0.6666666666666666
+      ],
+      "generated_tokens_median": 6264.5,
+      "generated_tokens_mean": 6712.033333333334,
+      "reasoning_tokens_median": 6098.5,
+      "truncated": 0,
+      "no_answer": 2
+    }
+  ],
+  "usage": {
+    "baseline/baseline": {
+      "calls": 180,
+      "cached_calls": 2,
+      "prompt_tokens": 212359,
+      "completion_tokens": 620252,
+      "reasoning_tokens": 566222,
+      "billed_prompt_tokens": 208332,
+      "billed_completion_tokens": 601727
+    }
+  }
+}
