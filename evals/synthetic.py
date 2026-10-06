@@ -38,6 +38,11 @@ ITEMS = [
     "gloves", "hats", "lanterns", "maps", "notebooks", "onions", "pears", "pillows", "plates", "potatoes",
     "quilts", "radishes", "sandals", "saucers", "teacups", "thimbles", "umbrellas", "vases", "wagons", "whisks",
 ]
+# Closes the world so "the total number of items X has" is well defined.
+PREAMBLE = (
+    "Each person has only the items mentioned below, and every quantity is a whole number. "
+    '"The total number of items X has" means the sum of all of X\'s quantities mentioned below.'
+)
 FRACTIONS = {2: "half", 3: "one third", 4: "one quarter", 5: "one fifth"}
 
 def people_for(n_ops: int) -> int:
@@ -97,7 +102,7 @@ class Synthetic:
 
     @property
     def text(self) -> str:
-        return " ".join(s.text for s in self.statements) + "\n\n" + self.question
+        return PREAMBLE + "\n\n" + " ".join(s.text for s in self.statements) + "\n\n" + self.question
 
     def to_problem(self, pid: str) -> Problem:
         return Problem(pid, self.text, str(self.answer), dict(self.params))
@@ -407,6 +412,11 @@ def generate(
         }
         return p
     raise RuntimeError(f"could not generate a valid problem for {params} after {max_attempts} attempts")
+
+
+def standard_knobs(n_ops: int) -> dict[str, Any]:
+    """The one-knob recipe used for calibration and the frozen sets."""
+    return dict(n_ops=n_ops, n_distractors=n_ops // 2, n_reverse=1 if n_ops >= 8 else 0, p_total=0.2, shuffle=True)
 
 
 def generate_set(n: int, seed: int, **knobs: Any) -> list[Problem]:

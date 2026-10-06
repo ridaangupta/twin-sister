@@ -1,8 +1,9 @@
-Solve the problem. Think step by step, checking each calculation. You have a budget of about {budget} tokens for your reasoning; use as much of it as is useful.
-
-End with the final answer as a single number on its own line, in this exact format:
-
-ANSWER: <number>
-
 PROBLEM:
 {task}
+
+Solve the problem. You have a budget of about {budget} tokens; use as much of it as is useful. Respond in exactly two sections:
+
+WORKING:
+<compute every quantity you need, one per line, as "quantity = expression = value"; check each calculation>
+
+ANSWER: <a single number>

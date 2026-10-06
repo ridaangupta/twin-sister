@@ -216,3 +216,20 @@ async def test_every_call_is_traced(tmp_path, cache):
 def test_model_required():
     with pytest.raises(ValueError):
         LLM("")
+
+
+async def test_reasoning_effort_is_sent_keyed_and_traced(tmp_path, cache):
+    client = FakeClient()
+    with Tracer(tmp_path / "run", "r") as tracer:
+        llm = LLM("m", tracer=tracer, cache=cache, reasoning_effort="low", clients={"A": client})
+        await llm.complete(ctx(), MSGS, max_tokens=16)
+    assert client.calls[0]["reasoning_effort"] == "low"
+    row = json.loads((tmp_path / "run" / "calls.jsonl").read_text().splitlines()[0])
+    assert row["reasoning_effort"] == "low"
+
+    other = FakeClient()
+    await LLM("m", cache=cache, reasoning_effort="high", clients={"A": other}).complete(ctx(), MSGS, max_tokens=16)
+    assert len(other.calls) == 1  # different effort is a cache miss
+    default = FakeClient()
+    await LLM("m", cache=cache, clients={"A": default}).complete(ctx(), MSGS, max_tokens=16)
+    assert len(default.calls) == 1 and "reasoning_effort" not in default.calls[0]

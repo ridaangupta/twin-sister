@@ -24,13 +24,9 @@ from dialogic.llm import LLM, ResponseCache
 from dialogic.trace import Tracer
 from evals.baselines import Baselines
 from evals.metrics import bootstrap_ci
-from evals.synthetic import generate_set
+from evals.synthetic import generate_set, standard_knobs as recipe
 
 ROOT = Path(__file__).resolve().parent.parent
-
-
-def recipe(n_ops: int) -> dict:
-    return dict(n_ops=n_ops, n_distractors=n_ops // 2, n_reverse=1 if n_ops >= 8 else 0, p_total=0.2, shuffle=True)
 
 
 async def main() -> None:
@@ -40,16 +36,19 @@ async def main() -> None:
     ap.add_argument("--budget", type=int, default=8000)
     ap.add_argument("--seed", type=int, default=1000)  # disjoint from the seeds used for frozen dev sets
     ap.add_argument("--concurrency", type=int, default=16)
+    ap.add_argument("--model", default=None, help="defaults to $MODEL")
+    ap.add_argument("--effort", default=None, help="reasoning_effort; omitted = API default")
     args = ap.parse_args()
 
     load_dotenv(ROOT / ".env")
-    model = os.environ["MODEL"]
+    model = args.model or os.environ["MODEL"]
     run_id = f"{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}_calibrate_synthetic"
     run_dir = ROOT / "runs" / run_id
 
     problems = {lvl: generate_set(args.n, args.seed, **recipe(lvl)) for lvl in args.levels}
     with Tracer(run_dir, run_id) as tracer:
-        llm = LLM(model, tracer=tracer, cache=ResponseCache(ROOT / "runs" / ".cache.sqlite"), concurrency=args.concurrency, seed=0, timeout_s=600)
+        llm = LLM(model, tracer=tracer, cache=ResponseCache(ROOT / "runs" / ".cache.sqlite"), concurrency=args.concurrency, seed=0, timeout_s=600,
+                  reasoning_effort=args.effort)
         b = Baselines(llm, tracer=tracer, temperature=None)
         results = await b.run("cot", [p for ps in problems.values() for p in ps], budget=args.budget)
 
@@ -60,7 +59,7 @@ async def main() -> None:
 
     by_id = {r.problem_id: r for r in results}
     table = []
-    print(f"model={model}  n={args.n}/level  budget={args.budget}\n")
+    print(f"model={model}  effort={args.effort}  n={args.n}/level  budget={args.budget}\n")
     print(f"{'n_ops':>5} {'acc':>6} {'95% CI':>15} {'gen tok (med)':>14} {'reasoning (med)':>16} {'trunc':>5} {'no ans':>6} {'err':>4}")
     for lvl, ps in problems.items():
         rs = [by_id[p.id] for p in ps if p.id in by_id]
@@ -83,7 +82,7 @@ async def main() -> None:
         print(f"{lvl:>5} {row['accuracy']:>6.2f} [{lo:.2f}, {hi:.2f}]{'':>2} {row['generated_tokens_median']:>14.0f} "
               f"{row['reasoning_tokens_median']:>16.0f} {row['truncated']:>5} {row['no_answer']:>6} {row['errors']:>4}")
 
-    out = {"run_id": run_id, "model": model, "n_per_level": args.n, "budget": args.budget, "seed": args.seed, "levels": table,
+    out = {"run_id": run_id, "model": model, "reasoning_effort": args.effort, "n_per_level": args.n, "budget": args.budget, "seed": args.seed, "levels": table,
            "usage": llm.usage.snapshot()}
     (run_dir / "calibration.json").write_text(json.dumps(out, indent=2))
     print(f"\n{run_dir}/calibration.json")

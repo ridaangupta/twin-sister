@@ -1,0 +1,289 @@
+[
+  {
+    "spec": "gpt-5.6-luna:none",
+    "errors": 0,
+    "levels": {
+      "48": {
+        "n": 19,
+        "accuracy": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "visible_tokens_median": 564,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 6.203,
+        "truncated": 0,
+        "no_answer": 7
+      },
+      "64": {
+        "n": 21,
+        "accuracy": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "visible_tokens_median": 483,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 4.588,
+        "truncated": 0,
+        "no_answer": 6
+      }
+    },
+    "usage": {
+      "calls": 40,
+      "cached_calls": 0,
+      "prompt_tokens": 68803,
+      "completion_tokens": 22790,
+      "reasoning_tokens": 0,
+      "billed_prompt_tokens": 68803,
+      "billed_completion_tokens": 22790
+    }
+  },
+  {
+    "spec": "gpt-5.6-luna:low",
+    "errors": 0,
+    "levels": {
+      "48": {
+        "n": 19,
+        "accuracy": 0.21052631578947367,
+        "ci95": [
+          0.05263157894736842,
+          0.42105263157894735
+        ],
+        "visible_tokens_median": 482,
+        "reasoning_tokens_median": 1783,
+        "latency_median_s": 26.702,
+        "truncated": 0,
+        "no_answer": 4
+      },
+      "64": {
+        "n": 21,
+        "accuracy": 0.047619047619047616,
+        "ci95": [
+          0.0,
+          0.14285714285714285
+        ],
+        "visible_tokens_median": 199,
+        "reasoning_tokens_median": 1906,
+        "latency_median_s": 23.318,
+        "truncated": 0,
+        "no_answer": 5
+      }
+    },
+    "usage": {
+      "calls": 40,
+      "cached_calls": 0,
+      "prompt_tokens": 68803,
+      "completion_tokens": 90521,
+      "reasoning_tokens": 71134,
+      "billed_prompt_tokens": 68803,
+      "billed_completion_tokens": 90521
+    }
+  },
+  {
+    "spec": "gpt-5.6-luna:medium",
+    "errors": 0,
+    "levels": {
+      "48": {
+        "n": 19,
+        "accuracy": 0.47368421052631576,
+        "ci95": [
+          0.2631578947368421,
+          0.6842105263157895
+        ],
+        "visible_tokens_median": 1126,
+        "reasoning_tokens_median": 3402,
+        "latency_median_s": 42.601,
+        "truncated": 0,
+        "no_answer": 1
+      },
+      "64": {
+        "n": 21,
+        "accuracy": 0.23809523809523808,
+        "ci95": [
+          0.09523809523809523,
+          0.42857142857142855
+        ],
+        "visible_tokens_median": 1215,
+        "reasoning_tokens_median": 5061,
+        "latency_median_s": 65.964,
+        "truncated": 0,
+        "no_answer": 8
+      }
+    },
+    "usage": {
+      "calls": 40,
+      "cached_calls": 0,
+      "prompt_tokens": 68803,
+      "completion_tokens": 207733,
+      "reasoning_tokens": 167032,
+      "billed_prompt_tokens": 68803,
+      "billed_completion_tokens": 207733
+    }
+  },
+  {
+    "spec": "gpt-6-luna:none",
+    "errors": 0,
+    "levels": {
+      "48": {
+        "n": 19,
+        "accuracy": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "visible_tokens_median": 741,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 5.704,
+        "truncated": 1,
+        "no_answer": 13
+      },
+      "64": {
+        "n": 21,
+        "accuracy": 0.047619047619047616,
+        "ci95": [
+          0.0,
+          0.14285714285714285
+        ],
+        "visible_tokens_median": 722,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 5.4,
+        "truncated": 0,
+        "no_answer": 17
+      }
+    },
+    "usage": {
+      "calls": 40,
+      "cached_calls": 0,
+      "prompt_tokens": 68803,
+      "completion_tokens": 44242,
+      "reasoning_tokens": 0,
+      "billed_prompt_tokens": 68803,
+      "billed_completion_tokens": 44242
+    }
+  },
+  {
+    "spec": "gpt-5.4-mini:none",
+    "errors": 1,
+    "levels": {
+      "48": {
+        "n": 19,
+        "accuracy": 0.05263157894736842,
+        "ci95": [
+          0.0,
+          0.15789473684210525
+        ],
+        "visible_tokens_median": 1252,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 7.825,
+        "truncated": 0,
+        "no_answer": 0
+      },
+      "64": {
+        "n": 20,
+        "accuracy": 0.05,
+        "ci95": [
+          0.0,
+          0.15
+        ],
+        "visible_tokens_median": 1319.0,
+        "reasoning_tokens_median": 0.0,
+        "latency_median_s": 8.314,
+        "truncated": 0,
+        "no_answer": 0
+      }
+    },
+    "usage": {
+      "calls": 39,
+      "cached_calls": 0,
+      "prompt_tokens": 66789,
+      "completion_tokens": 49034,
+      "reasoning_tokens": 0,
+      "billed_prompt_tokens": 66789,
+      "billed_completion_tokens": 49034
+    }
+  },
+  {
+    "spec": "gpt-4.1-mini",
+    "errors": 0,
+    "levels": {
+      "48": {
+        "n": 19,
+        "accuracy": 0.21052631578947367,
+        "ci95": [
+          0.05263157894736842,
+          0.42105263157894735
+        ],
+        "visible_tokens_median": 7200,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 66.022,
+        "truncated": 0,
+        "no_answer": 0
+      },
+      "64": {
+        "n": 21,
+        "accuracy": 0.047619047619047616,
+        "ci95": [
+          0.0,
+          0.14285714285714285
+        ],
+        "visible_tokens_median": 8169,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 59.85,
+        "truncated": 0,
+        "no_answer": 0
+      }
+    },
+    "usage": {
+      "calls": 40,
+      "cached_calls": 0,
+      "prompt_tokens": 68843,
+      "completion_tokens": 316943,
+      "reasoning_tokens": 0,
+      "billed_prompt_tokens": 68843,
+      "billed_completion_tokens": 316943
+    }
+  },
+  {
+    "spec": "gpt-4.1",
+    "errors": 0,
+    "levels": {
+      "48": {
+        "n": 19,
+        "accuracy": 0.42105263157894735,
+        "ci95": [
+          0.21052631578947367,
+          0.631578947368421
+        ],
+        "visible_tokens_median": 7557,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 61.571,
+        "truncated": 0,
+        "no_answer": 0
+      },
+      "64": {
+        "n": 21,
+        "accuracy": 0.047619047619047616,
+        "ci95": [
+          0.0,
+          0.14285714285714285
+        ],
+        "visible_tokens_median": 9015,
+        "reasoning_tokens_median": 0,
+        "latency_median_s": 63.646,
+        "truncated": 2,
+        "no_answer": 1
+      }
+    },
+    "usage": {
+      "calls": 40,
+      "cached_calls": 0,
+      "prompt_tokens": 68843,
+      "completion_tokens": 334505,
+      "reasoning_tokens": 0,
+      "billed_prompt_tokens": 68843,
+      "billed_completion_tokens": 334505
+    }
+  }
+]

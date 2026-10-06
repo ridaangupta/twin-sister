@@ -95,11 +95,16 @@ def test_config_env_expansion(tmp_path, monkeypatch):
         runner.load_config(path)
 
 
-def test_shipped_configs_parse(monkeypatch):
+def test_shipped_configs_parse_and_load(monkeypatch):
+    monkeypatch.undo()  # use the real dataset loaders, not the toy fixture
     monkeypatch.setenv("MODEL", "m")
-    for name in ("gsm8k_dev50_dialogue", "gsm8k_dev50_baselines"):
-        cfg, _ = runner.load_config(runner.ROOT / "configs" / f"{name}.yaml")
-        assert cfg["dataset"]["subset"] == "evals/subsets/gsm8k_dev200.json"
+    paths = sorted((runner.ROOT / "configs").glob("*.yaml"))
+    assert len(paths) >= 4
+    for path in paths:
+        cfg, _ = runner.load_config(path)
+        if cfg["dataset"]["name"] == "jsonl":
+            probs = datasets.load(cfg["dataset"])
+            assert len(probs) == cfg["dataset"]["limit"] and all(p.gold.isdigit() for p in probs)
 
 
 def test_dev_subset_file_is_fixed():

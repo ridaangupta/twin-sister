@@ -18,6 +18,7 @@ It is your turn (turn {turn}). Write your post to the shared thread.
 How to post:
 - Respond to the other agent's last post directly. Point out specific errors, accept specific points, and add what is missing. Do not repeat what is already agreed.
 - Keep pursuing your objective, but do not hold out against an argument you cannot refute. Changing your answer when shown a real error is good.
+- Show the calculation behind every number you state, as "quantity = expression = value". Do not assert a value without its working.
 - Aim for about {target_tokens} tokens. Stop writing once you have made your point.
 - End your post with this trailer, one field per line, exactly as shown:
 

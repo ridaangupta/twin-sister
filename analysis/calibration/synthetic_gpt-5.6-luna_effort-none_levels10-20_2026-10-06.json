@@ -1,0 +1,65 @@
+{
+  "run_id": "20261006T212505Z_calibrate_synthetic",
+  "model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "n_per_level": 30,
+  "budget": 16000,
+  "seed": 1000,
+  "levels": [
+    {
+      "n_ops": 10,
+      "knobs": {
+        "n_ops": 10,
+        "n_distractors": 5,
+        "n_reverse": 1,
+        "p_total": 0.2,
+        "shuffle": true
+      },
+      "n": 30,
+      "errors": 0,
+      "accuracy": 0.8666666666666667,
+      "ci95": [
+        0.7333333333333333,
+        0.9666666666666667
+      ],
+      "generated_tokens_median": 301.0,
+      "generated_tokens_mean": 291.1,
+      "reasoning_tokens_median": 0.0,
+      "truncated": 0,
+      "no_answer": 2
+    },
+    {
+      "n_ops": 20,
+      "knobs": {
+        "n_ops": 20,
+        "n_distractors": 10,
+        "n_reverse": 1,
+        "p_total": 0.2,
+        "shuffle": true
+      },
+      "n": 30,
+      "errors": 0,
+      "accuracy": 0.43333333333333335,
+      "ci95": [
+        0.26666666666666666,
+        0.6333333333333333
+      ],
+      "generated_tokens_median": 518.5,
+      "generated_tokens_mean": 548.4333333333333,
+      "reasoning_tokens_median": 0.0,
+      "truncated": 0,
+      "no_answer": 1
+    }
+  ],
+  "usage": {
+    "baseline/baseline": {
+      "calls": 60,
+      "cached_calls": 0,
+      "prompt_tokens": 34178,
+      "completion_tokens": 25186,
+      "reasoning_tokens": 0,
+      "billed_prompt_tokens": 34178,
+      "billed_completion_tokens": 25186
+    }
+  }
+}

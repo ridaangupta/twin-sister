@@ -179,6 +179,7 @@ class LLM:
         cache: ResponseCache | None = None,
         concurrency: int = 8,
         seed: int | None = None,
+        reasoning_effort: str | None = None,
         timeout_s: float = 120.0,
         max_attempts: int = 6,
         retry_wait: Any = None,
@@ -191,6 +192,7 @@ class LLM:
         self.tracer = tracer
         self.cache = cache
         self.seed = seed
+        self.reasoning_effort = reasoning_effort  # None = model default; omitted from the request
         self.timeout_s = timeout_s
         self.max_attempts = max_attempts
         self.retry_wait = retry_wait or wait_random_exponential(multiplier=1, max=60)
@@ -207,6 +209,8 @@ class LLM:
             cache=ResponseCache(cache_path) if cfg.get("cache", True) else None,
             concurrency=cfg.get("concurrency", 8),
             seed=cfg.get("seed"),
+            reasoning_effort=cfg.get("reasoning_effort"),
+            timeout_s=cfg.get("timeout_s", 120.0),
         )
 
     def _client(self, agent: str) -> Any:
@@ -225,6 +229,8 @@ class LLM:
         temperature: float | None = 0.0,
     ) -> Completion:
         params = {"max_tokens": max_tokens, "temperature": temperature, "seed": self.seed, "sample_idx": ctx.sample_idx}
+        if self.reasoning_effort is not None:  # only keyed when set, so existing cache entries stay valid
+            params["reasoning_effort"] = self.reasoning_effort
         key = cache_key(self.model, messages, params)
         p_hash = prompt_hash(messages)
 
@@ -247,6 +253,7 @@ class LLM:
                     "max_tokens": max_tokens,
                     "temperature": temperature,
                     "seed": self.seed,
+                    "reasoning_effort": self.reasoning_effort,
                     "response": completion.text,
                     "prompt_tokens": completion.prompt_tokens,
                     "completion_tokens": completion.completion_tokens,
@@ -265,6 +272,8 @@ class LLM:
             kwargs["temperature"] = temperature
         if self.seed is not None:
             kwargs["seed"] = self.seed
+        if self.reasoning_effort is not None:
+            kwargs["reasoning_effort"] = self.reasoning_effort
         client = self._client(ctx.agent)
 
         async with self._sem:

@@ -1,0 +1,33 @@
+# Phase 1 dev run on synthetic problems: accuracy vs simplicity, first 50 dev problems.
+name: syn_dev50_dialogue
+method: dialogue
+model: ${MODEL}
+seed: 0
+temperature: null         # reasoning models reject temperature
+reasoning_effort: none     # all reasoning visible in text; see analysis/calibration
+concurrency: 16
+cache: true
+# pricing: {input_per_mtok: 0.0, output_per_mtok: 0.0}   # optional, USD per million tokens
+
+dataset:
+  name: jsonl
+  path: evals/subsets/synthetic_dev200.jsonl   # 100 x 10 steps + 100 x 16 steps, mixed
+  limit: 50
+
+agents:
+  A: {objective: accuracy}
+  B: {objective: simplicity}
+first_speaker: seeded     # seeded | A | B
+
+controller:
+  type: heuristic
+  max_turns: 8            # posts, not exchanges
+  soft_limit: 300
+  soft_limit_choices: [150, 300, 600]   # sampled per (problem, turn) so Phase 2 has variation
+  scratch_budget: 200     # 0 disables private work
+  k: 2.0                  # hard cap = soft_limit * k
+
+synthesis:
+  type: single_writer
+  writer: A
+  max_tokens: 512
