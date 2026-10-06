@@ -13,4 +13,17 @@ SHARED THREAD:
 YOUR PRIVATE SCRATCHPAD:
 {scratchpad}
 
-It is your turn (turn {turn}). Write your post to the shared thread. Target length: about {target_tokens} tokens. End with the trailer.
+It is your turn (turn {turn}). Write your post to the shared thread.
+
+How to post:
+- Respond to the other agent's last post directly. Point out specific errors, accept specific points, and add what is missing. Do not repeat what is already agreed.
+- Keep pursuing your objective, but do not hold out against an argument you cannot refute. Changing your answer when shown a real error is good.
+- Aim for about {target_tokens} tokens. Stop writing once you have made your point.
+- End your post with this trailer, one field per line, exactly as shown:
+
+ANSWER: <your current final answer as a single number, or none>
+STANCE: <agree | disagree | unsure>   (toward the other agent's last post; unsure if there is none)
+CONSENSUS: <yes | no>   (yes only if you accept the current shared answer as final and nothing needs checking)
+FACT+: <one short fact you want to add to the ledger>   (optional, repeatable)
+FACT_OK: <fact id, e.g. F2>   (optional, repeatable; confirm a fact the other agent proposed)
+FACT_DISPUTE: <fact id>   (optional, repeatable; challenge a fact)

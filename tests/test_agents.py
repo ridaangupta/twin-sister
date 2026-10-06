@@ -71,3 +71,12 @@ async def test_speak_parses_post_and_passes_hard_cap():
 def test_extract_final(text, expected):
     answer, steps, _ = extract_final(text)
     assert (answer, steps) == expected
+
+
+def test_trailer_rules_only_in_core_turn_prompt():
+    """The scratchpad call must not be told to write a trailer, or it drafts the post instead of working."""
+    a, _ = agents()
+    view = Memory("Q?", ["A", "B"]).view_for("A")
+    assert "CONSENSUS: <yes | no>" not in a.system_prompt()
+    assert "CONSENSUS: <yes | no>" not in a.scratch_messages(view, 200)[1]["content"]
+    assert "CONSENSUS: <yes | no>" in a.core_messages(view, 300)[1]["content"]

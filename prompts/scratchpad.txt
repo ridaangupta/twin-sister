@@ -13,4 +13,11 @@ SHARED THREAD:
 YOUR PRIVATE SCRATCHPAD SO FAR:
 {scratchpad}
 
-Before your next post (turn {turn}), work privately. Nobody else will read this. Check calculations, test the other agent's claims, and decide what your post should say. You have about {budget} tokens. Do not write the trailer here.
+This is private work time before your next post (turn {turn}). It is not a post: nobody else will read it, and it is never used as an answer. You have about {budget} tokens.
+
+Use it to do work your post will rely on, guided by your objective:
+- Recompute the key quantities independently from the problem statement.
+- Test the other agent's latest claims and the open ledger claims; note any that are wrong and why.
+- Look for what your objective cares about that the thread has missed.
+
+Write terse working notes, not prose. Do not draft your post, and do not write ANSWER, STANCE, CONSENSUS or FACT lines.
