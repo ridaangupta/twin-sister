@@ -1,0 +1,6 @@
+Solve the problem. Reply with only the final answer as a single number, in this exact format and nothing else:
+
+ANSWER: <number>
+
+PROBLEM:
+{task}

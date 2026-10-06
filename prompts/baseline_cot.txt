@@ -1,0 +1,8 @@
+Solve the problem. Think step by step, checking each calculation. You have a budget of about {budget} tokens for your reasoning; use as much of it as is useful.
+
+End with the final answer as a single number on its own line, in this exact format:
+
+ANSWER: <number>
+
+PROBLEM:
+{task}

@@ -28,6 +28,7 @@ _FIELD = re.compile(
 )
 _NUMBER = re.compile(r"-?(?:\d[\d,]*(?:\.\d+)?|\.\d+)")
 _FACT_ID = re.compile(r"^\[?F?(\d+)\]?$", re.IGNORECASE)
+_ANSWER_LINE = re.compile(r"^[ \t>*_`-]*ANSWER[*_`]*\s*:[*_`]*\s*(.+)$", re.IGNORECASE | re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -51,20 +52,26 @@ class ParsedPost:
         return bool(self.errors)
 
 
-def normalize_answer(value: str | None) -> str | None:
-    """Canonical numeric form: last number in the string, no commas, no trailing zeros."""
+def normalize_answer(value: str | None, *, pick: Literal["first", "last"] = "last") -> str | None:
+    """Canonical numeric form of the first/last number in the string: no commas, no trailing zeros."""
     if value is None:
         return None
     matches = _NUMBER.findall(value.replace("$", ""))
     if not matches:
         return None
     try:
-        d = Decimal(matches[-1].replace(",", ""))
+        d = Decimal(matches[0 if pick == "first" else -1].replace(",", ""))
     except InvalidOperation:
         return None
     if d == d.to_integral_value():
         return str(d.quantize(Decimal(1)))
     return format(d.normalize(), "f")
+
+
+def extract_answer(text: str) -> str | None:
+    """Final answer from free text: first number on the last ANSWER line, else the last number in the text."""
+    lines = _ANSWER_LINE.findall(text)
+    return normalize_answer(lines[-1], pick="first") if lines else normalize_answer(text)
 
 
 def normalize_fact_id(value: str) -> str | None:
@@ -87,7 +94,7 @@ def parse_post(text: str) -> ParsedPost:
             if value.lower() in ("none", "n/a", ""):
                 answer = None
             else:
-                answer = normalize_answer(value)
+                answer = normalize_answer(value, pick="first")
                 if answer is None:
                     errors.append(f"unparseable ANSWER: {value!r}")
         elif name == "STANCE":

@@ -1,0 +1,135 @@
+"""Single-agent baselines at matched generated-token budget (same model, same LLM wrapper).
+
+- direct: answer only.
+- cot: step by step, max_tokens = budget B (the prompt states B; real usage is reported).
+- self_consistency: n = max(min_samples, round(B / mean CoT tokens)) CoT samples at
+  temperature > 0, per-sample cap = cot cap, majority vote (ties -> earliest sample).
+"""
+
+from __future__ import annotations
+
+import asyncio
+from collections import Counter
+from dataclasses import dataclass, field
+from statistics import mean
+from typing import Any, Mapping, Sequence
+
+from dialogic.llm import LLM, CallContext
+from dialogic.prompts import PromptLibrary
+from dialogic.protocol import extract_answer
+from dialogic.trace import Tracer
+from evals.datasets import Problem
+
+
+@dataclass
+class BaselineResult:
+    method: str
+    problem_id: str
+    gold: str
+    final_answer: str | None
+    final_text: str
+    correct: bool
+    tokens: dict[str, int]  # generated, prompt
+    n_samples: int = 1
+    sample_answers: list[str | None] = field(default_factory=list)
+    truncated: int = 0  # samples cut off at the cap
+
+    def row(self) -> dict[str, Any]:
+        return dict(self.__dict__)
+
+
+def majority_vote(answers: Sequence[str | None]) -> str | None:
+    counts = Counter(a for a in answers if a is not None)
+    if not counts:
+        return None
+    top = max(counts.values())
+    return next(a for a in answers if a is not None and counts[a] == top)
+
+
+class Baselines:
+    def __init__(self, llm: LLM, prompts: PromptLibrary | None = None, tracer: Tracer | None = None, *, temperature: float | None = 0.0):
+        self.llm = llm
+        self.prompts = prompts or PromptLibrary()
+        self.tracer = tracer
+        self.temperature = temperature
+
+    def _msgs(self, name: str, **kw: Any) -> list[dict[str, str]]:
+        return [{"role": "user", "content": self.prompts.render(name, **kw)}]
+
+    def _ctx(self, method: str, p: Problem, sample_idx: int = 0) -> CallContext:
+        return CallContext(problem_id=p.id, method=method, agent="baseline", space="baseline", sample_idx=sample_idx)
+
+    async def direct(self, p: Problem, max_tokens: int = 32) -> BaselineResult:
+        c = await self.llm.complete(self._ctx("direct", p), self._msgs("baseline_direct", task=p.question), max_tokens=max_tokens, temperature=self.temperature)
+        ans = extract_answer(c.text)
+        return BaselineResult("direct", p.id, p.gold, ans, c.text, ans == p.gold,
+                              {"generated": c.completion_tokens, "prompt": c.prompt_tokens}, 1, [ans], int(c.truncated))
+
+    async def cot(self, p: Problem, budget: int) -> BaselineResult:
+        c = await self.llm.complete(self._ctx("cot", p), self._msgs("baseline_cot", task=p.question, budget=budget), max_tokens=budget, temperature=self.temperature)
+        ans = extract_answer(c.text)
+        return BaselineResult("cot", p.id, p.gold, ans, c.text, ans == p.gold,
+                              {"generated": c.completion_tokens, "prompt": c.prompt_tokens}, 1, [ans], int(c.truncated))
+
+    async def self_consistency(self, p: Problem, n: int, sample_budget: int, temperature: float = 0.7) -> BaselineResult:
+        msgs = self._msgs("baseline_cot", task=p.question, budget=sample_budget)
+        cs = await asyncio.gather(*(
+            self.llm.complete(self._ctx("self_consistency", p, i), msgs, max_tokens=sample_budget, temperature=temperature) for i in range(n)
+        ))
+        answers = [extract_answer(c.text) for c in cs]
+        ans = majority_vote(answers)
+        return BaselineResult(
+            "self_consistency", p.id, p.gold, ans, cs[0].text, ans == p.gold,
+            {"generated": sum(c.completion_tokens for c in cs), "prompt": sum(c.prompt_tokens for c in cs)},
+            n, answers, sum(c.truncated for c in cs),
+        )
+
+    async def run(self, method: str, problems: Sequence[Problem], **kw: Any) -> list[BaselineResult]:
+        fn = {"direct": self.direct, "cot": self.cot, "self_consistency": self.self_consistency}[method]
+
+        async def one(p: Problem) -> BaselineResult | None:
+            try:
+                r = await fn(p, **kw)
+            except Exception as e:  # one failed problem must not sink the run
+                if self.tracer:
+                    self.tracer.record("errors", {"method": method, "problem_id": p.id, "error": repr(e)})
+                return None
+            if self.tracer:
+                self.tracer.problem(r.row())
+            return r
+
+        return [r for r in await asyncio.gather(*(one(p) for p in problems)) if r is not None]
+
+
+def sc_num_samples(budget: int, cot_tokens_mean: float, min_samples: int = 3) -> int:
+    return max(min_samples, round(budget / max(cot_tokens_mean, 1.0)))
+
+
+async def run_baselines(
+    cfg: Mapping[str, Any], problems: Sequence[Problem], budget: int, llm: LLM, tracer: Tracer | None = None
+) -> tuple[dict[str, list[BaselineResult]], dict[str, Any]]:
+    """Run the configured baselines in order. SC sizes itself from the CoT run's measured tokens."""
+    bcfg = cfg.get("baselines", {})
+    methods = bcfg.get("methods", ["direct", "cot", "self_consistency"])
+    b = Baselines(llm, tracer=tracer, temperature=cfg.get("temperature", 0.0))
+    results: dict[str, list[BaselineResult]] = {}
+    info: dict[str, Any] = {"budget": budget}
+
+    for m in methods:
+        if m == "direct":
+            results[m] = await b.run("direct", problems, max_tokens=bcfg.get("direct_max_tokens", 32))
+        elif m == "cot":
+            results[m] = await b.run("cot", problems, budget=budget)
+        elif m == "self_consistency":
+            ref = bcfg.get("cot_tokens_ref")
+            if ref is None:
+                if not results.get("cot"):
+                    raise ValueError("self_consistency needs a cot run first or baselines.cot_tokens_ref")
+                ref = mean(r.tokens["generated"] for r in results["cot"])
+            n = bcfg.get("sc_samples") or sc_num_samples(budget, ref, bcfg.get("sc_min_samples", 3))
+            sample_budget = bcfg.get("sc_sample_max_tokens", budget)
+            info["self_consistency"] = {"n": n, "cot_tokens_ref": ref, "sample_max_tokens": sample_budget}
+            results[m] = await b.run("self_consistency", problems, n=n, sample_budget=sample_budget, temperature=bcfg.get("sc_temperature", 0.7))
+        else:
+            raise ValueError(f"unknown baseline {m!r}")
+    return results, info

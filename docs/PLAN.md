@@ -222,7 +222,8 @@ everything written so far.
 
 - `datasets.py`: `Problem(id, question, gold, meta)`, `Dataset` protocol, and
   `load(name, split, subset)`.
-- `gsm8k.py` loads HF `openai/gsm8k` (`main`). The gold answer is the text
+- `gsm8k.py` downloads the official `test.jsonl` from `openai/grade-school-math` into `data/gsm8k/`
+  (gitignored) and verifies a pinned sha256. The gold answer is the text
   after `####`. `id = f"gsm8k-{split}-{index}"`.
 - The dev subset is 200 test-split ids, sampled once with seed 0 and
   committed to `evals/subsets/gsm8k_dev200.json`. The 50-problem dev run uses
@@ -367,5 +368,5 @@ script keyed by `(agent, space, turn)`.
    compliance, ledger use and truncation rate. Adjust the prompts before
    scaling.
 
-Dependencies: `openai`, `pyyaml`, `datasets`, `tenacity`, `numpy`, and for
+Dependencies: `openai`, `pyyaml`, `tenacity`, `python-dotenv`, and for
 dev, `pytest` and `pytest-asyncio`. These go in `pyproject.toml`.

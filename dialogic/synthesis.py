@@ -15,9 +15,8 @@ from dialogic.agents import Agent
 from dialogic.llm import CallContext
 from dialogic.memory import CoreView
 from dialogic.prompts import render_facts, render_thread
-from dialogic.protocol import normalize_answer
+from dialogic.protocol import extract_answer
 
-_ANSWER_LINE = re.compile(r"^[ \t>*_`-]*ANSWER[*_`]*\s*:[*_`]*\s*(.+)$", re.IGNORECASE | re.MULTILINE)
 _SOLUTION = re.compile(r"SOLUTION[*_`]*\s*:(.*?)(?=^[ \t>*_`-]*ANSWER[*_`]*\s*:|\Z)", re.IGNORECASE | re.DOTALL | re.MULTILINE)
 _STEP = re.compile(r"^\s*\d+[.)]\s+\S", re.MULTILINE)
 
@@ -35,8 +34,7 @@ class FinalAnswer:
 
 def extract_final(text: str) -> tuple[str | None, int, int]:
     """(answer, steps, solution length). Answer: last ANSWER line, else last number in the text."""
-    lines = _ANSWER_LINE.findall(text)
-    answer = normalize_answer(lines[-1]) if lines else normalize_answer(text)
+    answer = extract_answer(text)
     m = _SOLUTION.search(text)
     solution = m.group(1) if m else ""
     return answer, len(_STEP.findall(solution)), len(solution.split())

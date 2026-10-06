@@ -206,10 +206,15 @@ class DialogueRunner:
         return writer.id if writer is not None else "synthesizer"
 
     async def run_all(self, problems: Sequence[Problem]) -> list[DialogueResult]:
-        async def one(p: Problem) -> DialogueResult:
-            r = await self.run(p)
+        async def one(p: Problem) -> DialogueResult | None:
+            try:
+                r = await self.run(p)
+            except Exception as e:  # one failed problem must not sink the run
+                if self.tracer:
+                    self.tracer.record("errors", {"method": METHOD, "problem_id": p.id, "error": repr(e)})
+                return None
             if self.tracer:  # written as each problem finishes, so a later failure loses nothing
                 self.tracer.problem(r.row())
             return r
 
-        return list(await asyncio.gather(*(one(p) for p in problems)))
+        return [r for r in await asyncio.gather(*(one(p) for p in problems)) if r is not None]
