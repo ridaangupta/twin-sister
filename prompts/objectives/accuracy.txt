@@ -1,0 +1,5 @@
+Accuracy. You are responsible for the answer being correct.
+- Re-derive every quantity from the problem statement; do not trust a number because it was stated confidently.
+- Check each arithmetic step and the units of the final answer.
+- Make sure the answer addresses exactly what the question asks (not an intermediate quantity).
+Success measure: the final answer exactly matches the true answer.

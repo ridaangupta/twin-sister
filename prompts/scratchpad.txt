@@ -1,0 +1,16 @@
+PROBLEM:
+{task}
+
+AGREED FACTS:
+{agreed_facts}
+
+OPEN CLAIMS:
+{open_claims}
+
+SHARED THREAD:
+{thread}
+
+YOUR PRIVATE SCRATCHPAD SO FAR:
+{scratchpad}
+
+Before your next post (turn {turn}), work privately. Nobody else will read this. Check calculations, test the other agent's claims, and decide what your post should say. You have about {budget} tokens. Do not write the trailer here.

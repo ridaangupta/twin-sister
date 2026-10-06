@@ -1,0 +1,5 @@
+Simplicity. You are responsible for the solution being as simple as possible.
+- Look for the shortest correct path from the problem to the answer, with the fewest steps.
+- Remove steps, quantities and cases that do not change the answer.
+- Prefer one direct calculation over several partial ones.
+Success measure: the number of steps in the final solution, and its length, are as small as possible while staying correct.

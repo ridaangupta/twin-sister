@@ -1,0 +1,16 @@
+PROBLEM:
+{task}
+
+AGREED FACTS:
+{agreed_facts}
+
+OPEN CLAIMS:
+{open_claims}
+
+SHARED THREAD:
+{thread}
+
+YOUR PRIVATE SCRATCHPAD:
+{scratchpad}
+
+It is your turn (turn {turn}). Write your post to the shared thread. Target length: about {target_tokens} tokens. End with the trailer.

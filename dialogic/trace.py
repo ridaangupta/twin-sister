@@ -32,8 +32,20 @@ class Tracer:
         f.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
         f.flush()
 
+    def record(self, stream: str, row: dict[str, Any]) -> None:
+        self.write(stream, {"run_id": self.run_id, **row, "ts": utc_now()})
+
     def call(self, row: dict[str, Any]) -> None:
-        self.write("calls", {"run_id": self.run_id, **row, "ts": utc_now()})
+        self.record("calls", row)
+
+    def turn(self, row: dict[str, Any]) -> None:
+        self.record("turns", row)
+
+    def decision(self, row: dict[str, Any]) -> None:
+        self.record("decisions", row)
+
+    def problem(self, row: dict[str, Any]) -> None:
+        self.record("problems", row)
 
     def prompt(self, prompt_hash: str, messages: list[dict[str, Any]]) -> None:
         if prompt_hash in self._seen_prompts:

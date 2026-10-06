@@ -1,0 +1,21 @@
+The dialogue has ended. Using only the shared material below, write the final answer to the problem.
+
+PROBLEM:
+{task}
+
+AGREED FACTS:
+{agreed_facts}
+
+OPEN CLAIMS:
+{open_claims}
+
+SHARED THREAD:
+{thread}
+
+Write exactly this format and nothing else:
+
+SOLUTION:
+1. <first step>
+2. <next step>
+...
+ANSWER: <a single number>
