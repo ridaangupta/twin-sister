@@ -36,9 +36,30 @@ def make_subset(problems: list[Problem], n: int, seed: int = 0) -> list[str]:
     return [p.id for p in random.Random(seed).sample(problems, n)]
 
 
+def load_jsonl(path: str | Path) -> list[Problem]:
+    rows = (json.loads(l) for l in (ROOT / path).read_text().splitlines() if l.strip())
+    return [Problem(r["id"], r["question"], r["gold"], r.get("meta", {})) for r in rows]
+
+
+def save_jsonl(problems: list[Problem], path: str | Path) -> None:
+    lines = [json.dumps({"id": p.id, "question": p.question, "gold": p.gold, "meta": p.meta}) for p in problems]
+    (ROOT / path).write_text("\n".join(lines) + "\n")
+
+
 def load(cfg: Mapping[str, Any]) -> list[Problem]:
-    """cfg: {name, split, subset?: path to id list, limit?: first n of the subset/split}."""
-    problems = load_split(cfg["name"], cfg.get("split", "test"))
+    """cfg: {name, split, subset?: path to id list, limit?: first n of the subset/split}.
+
+    name: jsonl     -> {path}: a committed, frozen problem file
+    name: synthetic -> {n, seed, knobs}: generated on the fly (use jsonl for experiments)
+    """
+    if cfg["name"] == "jsonl":
+        problems = load_jsonl(cfg["path"])
+    elif cfg["name"] == "synthetic":
+        from evals.synthetic import generate_set
+
+        problems = generate_set(cfg["n"], cfg.get("seed", 0), **cfg.get("knobs", {}))
+    else:
+        problems = load_split(cfg["name"], cfg.get("split", "test"))
     if subset := cfg.get("subset"):
         ids = json.loads((ROOT / subset).read_text())["ids"]
         by_id = {p.id: p for p in problems}
@@ -52,4 +73,5 @@ def load(cfg: Mapping[str, Any]) -> list[Problem]:
 
 
 def is_full_split(cfg: Mapping[str, Any]) -> bool:
-    return not cfg.get("subset") and not cfg.get("limit")
+    """True only for a public benchmark's whole split; generated and frozen sets are always allowed."""
+    return cfg["name"] not in ("jsonl", "synthetic") and not cfg.get("subset") and not cfg.get("limit")
