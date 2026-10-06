@@ -1,0 +1,28 @@
+[project]
+name = "dialogic"
+version = "0.1.0"
+description = "Dialogic reasoning: two-agent dialogue vs single-agent baselines"
+requires-python = ">=3.11"
+dependencies = [
+    "openai>=3.0",
+    "tenacity>=8.2",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.2.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dialogic", "evals"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
