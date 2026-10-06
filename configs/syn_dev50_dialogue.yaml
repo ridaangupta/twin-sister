@@ -7,7 +7,7 @@ temperature: null         # reasoning models reject temperature
 reasoning_effort: none     # all reasoning visible in text; see analysis/calibration
 concurrency: 16
 cache: true
-# pricing: {input_per_mtok: 0.0, output_per_mtok: 0.0}   # optional, USD per million tokens
+pricing: {input_per_mtok: 0.20, output_per_mtok: 1.20}   # gpt-5.6-luna, USD per million tokens
 
 dataset:
   name: jsonl
