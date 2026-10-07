@@ -2,8 +2,8 @@
 
     uv run python scripts/compare_runs.py runs/<dialogue> runs/<baselines> [runs/<ablation> ...] --ref dialogue
 
-Each method is labelled by its run's config name when a run has a single method (so ablations
-stay distinct), else by method name. Prints accuracy by level, paired tests against --ref
+Dialogue runs are labelled by config name (so ablations stay distinct); baseline methods by
+method name, suffixed with the config name when an earlier run already used that label. Prints accuracy by level, paired tests against --ref
 (exact McNemar + bootstrap CI of the accuracy difference), opening-agreement outcomes for
 dialogue runs, tokens, and cost per problem with API prompt-cache pricing from each run's config.
 """
@@ -55,6 +55,7 @@ def main() -> None:
     rows: dict[str, dict[str, dict]] = defaultdict(dict)
     costs: dict[str, float] = {}
     level: dict[str, int] = {}
+    seen_from: dict[str, str] = {}  # label -> config that first used it; later runs get a suffixed label
     for run in map(Path, args.runs):
         cfg = yaml.safe_load((run / "config.yaml").read_text())
         meta = json.loads((run / "meta.json").read_text())
@@ -62,7 +63,13 @@ def main() -> None:
         level.update({p.id: p.meta.get("n_ops") for p in load(resolved["dataset"])})
         probs = [json.loads(l) for l in (run / "problems.jsonl").read_text().splitlines()]
         methods = {r["method"] for r in probs}
-        label = (lambda m: cfg["name"]) if len(methods) == 1 and cfg["method"] == "dialogue" else (lambda m: m)
+        def label(m: str, cfg=cfg, methods=methods) -> str:
+            if len(methods) == 1 and cfg["method"] == "dialogue":
+                return cfg["name"]
+            return m if m not in seen_from or seen_from[m] == cfg["name"] else f"{m}[{cfg['name']}]"
+
+        for m in methods:
+            seen_from.setdefault(label(m), cfg["name"])
         for r in probs:
             rows[label(r["method"])][r["problem_id"]] = r
         per_method = defaultdict(float)

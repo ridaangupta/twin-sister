@@ -1,0 +1,17 @@
+PROBLEM:
+{task}
+
+Two independent attempts at this problem are below. They may both be right, one may be right, or both may be wrong.
+
+ATTEMPT 1:
+{attempt_1}
+
+ATTEMPT 2:
+{attempt_2}
+
+Find where the attempts differ, recompute each disputed quantity yourself from the problem statement, and fix any errors, including ones both attempts share. You have a budget of about {budget} tokens. Respond in exactly two sections:
+
+WORKING:
+<for each disputed or doubtful quantity, one line: "quantity = expression = value", checked against the problem statement>
+
+ANSWER: <a single number>

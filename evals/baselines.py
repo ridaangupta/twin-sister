@@ -4,6 +4,10 @@
 - cot: step by step, max_tokens = budget B (the prompt states B; real usage is reported).
 - self_consistency: n = max(min_samples, round(B / mean CoT tokens)) CoT samples at
   temperature > 0, per-sample cap = cot cap, majority vote (ties -> earliest sample).
+  `sc_samples` fixes n instead (e.g. to match the dialogue's cost rather than its tokens).
+- two_plus_judge: two independent CoT samples (as in SC); if their answers match, accept;
+  otherwise one judge call sees both attempts and produces the answer. The structural analog
+  of the dialogue (independent openings + reconciliation) without any back-and-forth.
 """
 
 from __future__ import annotations
@@ -33,6 +37,7 @@ class BaselineResult:
     n_samples: int = 1
     sample_answers: list[str | None] = field(default_factory=list)
     truncated: int = 0  # samples cut off at the cap
+    judged: bool | None = None  # two_plus_judge only: whether the attempts disagreed and the judge was called
 
     def row(self) -> dict[str, Any]:
         return dict(self.__dict__)
@@ -84,8 +89,29 @@ class Baselines:
             n, answers, sum(c.truncated for c in cs),
         )
 
+    async def two_plus_judge(self, p: Problem, sample_budget: int, judge_budget: int, temperature: float = 0.7) -> BaselineResult:
+        msgs = self._msgs("baseline_cot", task=p.question, budget=sample_budget)
+        # sample_idx 0/1 with SC's prompt and temperature: the same two draws as SC's first two samples
+        # (the response cache key ignores the method label, so these replay when SC already ran).
+        cs = await asyncio.gather(*(
+            self.llm.complete(self._ctx("two_plus_judge", p, i), msgs, max_tokens=sample_budget, temperature=temperature) for i in range(2)
+        ))
+        answers = [extract_answer(c.text) for c in cs]
+        gen = sum(c.completion_tokens for c in cs)
+        prompt = sum(c.prompt_tokens for c in cs)
+        judged = not (answers[0] is not None and answers[0] == answers[1])
+        text, ans = cs[0].text, answers[0]
+        if judged:
+            jmsgs = self._msgs("baseline_judge", task=p.question, attempt_1=cs[0].text, attempt_2=cs[1].text, budget=judge_budget)
+            j = await self.llm.complete(self._ctx("two_plus_judge", p, sample_idx=2), jmsgs, max_tokens=judge_budget, temperature=self.temperature)
+            text, ans = j.text, extract_answer(j.text)
+            gen += j.completion_tokens
+            prompt += j.prompt_tokens
+        return BaselineResult("two_plus_judge", p.id, p.gold, ans, text, ans == p.gold, {"generated": gen, "prompt": prompt}, 2,
+                              answers, sum(c.truncated for c in cs), judged)
+
     async def run(self, method: str, problems: Sequence[Problem], **kw: Any) -> list[BaselineResult]:
-        fn = {"direct": self.direct, "cot": self.cot, "self_consistency": self.self_consistency}[method]
+        fn = {"direct": self.direct, "cot": self.cot, "self_consistency": self.self_consistency, "two_plus_judge": self.two_plus_judge}[method]
 
         async def one(p: Problem) -> BaselineResult | None:
             try:
@@ -122,14 +148,23 @@ async def run_baselines(
             results[m] = await b.run("cot", problems, budget=budget)
         elif m == "self_consistency":
             ref = bcfg.get("cot_tokens_ref")
-            if ref is None:
-                if not results.get("cot"):
-                    raise ValueError("self_consistency needs a cot run first or baselines.cot_tokens_ref")
+            if ref is None and results.get("cot"):
                 ref = mean(r.tokens["generated"] for r in results["cot"])
-            n = bcfg.get("sc_samples") or sc_num_samples(budget, ref, bcfg.get("sc_min_samples", 3))
+            if bcfg.get("sc_samples"):
+                n = bcfg["sc_samples"]
+            elif ref is not None:
+                n = sc_num_samples(budget, ref, bcfg.get("sc_min_samples", 3))
+            else:
+                raise ValueError("self_consistency needs a cot run first, baselines.cot_tokens_ref, or baselines.sc_samples")
             sample_budget = bcfg.get("sc_sample_max_tokens", budget)
             info["self_consistency"] = {"n": n, "cot_tokens_ref": ref, "sample_max_tokens": sample_budget}
             results[m] = await b.run("self_consistency", problems, n=n, sample_budget=sample_budget, temperature=bcfg.get("sc_temperature", 0.7))
+        elif m == "two_plus_judge":
+            sample_budget = bcfg.get("sc_sample_max_tokens", budget)
+            judge_budget = bcfg.get("judge_max_tokens", budget)
+            info["two_plus_judge"] = {"sample_max_tokens": sample_budget, "judge_max_tokens": judge_budget}
+            results[m] = await b.run("two_plus_judge", problems, sample_budget=sample_budget, judge_budget=judge_budget,
+                                     temperature=bcfg.get("sc_temperature", 0.7))
         else:
             raise ValueError(f"unknown baseline {m!r}")
     return results, info

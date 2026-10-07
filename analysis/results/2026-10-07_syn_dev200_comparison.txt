@@ -2,22 +2,26 @@
 
 method                          all  10 steps  16 steps  gen tok  $/problem
 syn_dev200_dialogue           0.915     0.980     0.850     1881    0.00418
-direct                        0.080     0.080     0.080        7    0.00011
 cot                           0.740     0.870     0.610      398    0.00059
 self_consistency              0.850     0.960     0.740     1974    0.00291
+self_consistency[syn_dev200_baselines_extra]  0.860     0.950     0.770     2789    0.00411
+two_plus_judge                0.845     0.960     0.730      928    0.00145
 syn_dev200_abl_no_indep       0.855     0.950     0.760     1376    0.00262
 syn_dev200_abl_simplicity     0.900     0.960     0.840     1729    0.00387
 
 paired vs syn_dev200_dialogue:
-  syn_dev200_dialogue - direct                     [all] diff +0.835 CI95 [+0.780, +0.885]  ref-only 167  other-only   0  McNemar p=0.0000
-  syn_dev200_dialogue - direct                     [ 10] diff +0.900 CI95 [+0.840, +0.950]  ref-only  90  other-only   0  McNemar p=0.0000
-  syn_dev200_dialogue - direct                     [ 16] diff +0.770 CI95 [+0.690, +0.850]  ref-only  77  other-only   0  McNemar p=0.0000
   syn_dev200_dialogue - cot                        [all] diff +0.175 CI95 [+0.110, +0.240]  ref-only  42  other-only   7  McNemar p=0.0000
   syn_dev200_dialogue - cot                        [ 10] diff +0.110 CI95 [+0.050, +0.170]  ref-only  11  other-only   0  McNemar p=0.0010
   syn_dev200_dialogue - cot                        [ 16] diff +0.240 CI95 [+0.130, +0.350]  ref-only  31  other-only   7  McNemar p=0.0001
   syn_dev200_dialogue - self_consistency           [all] diff +0.065 CI95 [+0.005, +0.120]  ref-only  24  other-only  11  McNemar p=0.0410
   syn_dev200_dialogue - self_consistency           [ 10] diff +0.020 CI95 [-0.030, +0.070]  ref-only   4  other-only   2  McNemar p=0.6875
   syn_dev200_dialogue - self_consistency           [ 16] diff +0.110 CI95 [+0.010, +0.210]  ref-only  20  other-only   9  McNemar p=0.0614
+  syn_dev200_dialogue - self_consistency[syn_dev200_baselines_extra] [all] diff +0.055 CI95 [-0.005, +0.115]  ref-only  23  other-only  12  McNemar p=0.0895
+  syn_dev200_dialogue - self_consistency[syn_dev200_baselines_extra] [ 10] diff +0.030 CI95 [-0.020, +0.080]  ref-only   5  other-only   2  McNemar p=0.4531
+  syn_dev200_dialogue - self_consistency[syn_dev200_baselines_extra] [ 16] diff +0.080 CI95 [-0.020, +0.180]  ref-only  18  other-only  10  McNemar p=0.1849
+  syn_dev200_dialogue - two_plus_judge             [all] diff +0.070 CI95 [+0.015, +0.125]  ref-only  23  other-only   9  McNemar p=0.0201
+  syn_dev200_dialogue - two_plus_judge             [ 10] diff +0.020 CI95 [-0.030, +0.070]  ref-only   4  other-only   2  McNemar p=0.6875
+  syn_dev200_dialogue - two_plus_judge             [ 16] diff +0.120 CI95 [+0.020, +0.220]  ref-only  19  other-only   7  McNemar p=0.0290
   syn_dev200_dialogue - syn_dev200_abl_no_indep    [all] diff +0.060 CI95 [+0.005, +0.115]  ref-only  22  other-only  10  McNemar p=0.0501
   syn_dev200_dialogue - syn_dev200_abl_no_indep    [ 10] diff +0.030 CI95 [-0.010, +0.070]  ref-only   4  other-only   1  McNemar p=0.3750
   syn_dev200_dialogue - syn_dev200_abl_no_indep    [ 16] diff +0.090 CI95 [-0.010, +0.190]  ref-only  18  other-only   9  McNemar p=0.1221
