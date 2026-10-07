@@ -1,0 +1,23 @@
+# CONFIRMATORY test-set baselines (see analysis/preregistration_test400.md); run with
+# --match runs/<syn_test400_dialogue run>. SC n=7 matches the dialogue's dev-set cost; its first
+# five draws give equal-token SC (n=5) and its first two draws feed two_plus_judge.
+name: syn_test400_baselines
+final_run: true
+method: baselines
+model: ${MODEL}
+seed: 0
+temperature: null
+reasoning_effort: none
+concurrency: 16
+cache: true
+prompt_cache: explicit
+pricing: {input_per_mtok: 0.20, output_per_mtok: 1.20, cache_read_per_mtok: 0.02, cache_write_per_mtok: 0.25}   # gpt-5.6-luna, USD/Mtok
+
+dataset:
+  name: jsonl
+  path: evals/subsets/synthetic_test400.jsonl
+
+baselines:
+  methods: [direct, cot, self_consistency, two_plus_judge]
+  sc_samples: 7
+  sc_temperature: 0.7
