@@ -1,0 +1,7 @@
+AGREED FACTS:
+{agreed_facts}
+
+OPEN CLAIMS:
+{open_claims}
+
+MODE: POST. Turn {turn}. {opening}Aim for about {target_tokens} tokens, then end with the trailer.

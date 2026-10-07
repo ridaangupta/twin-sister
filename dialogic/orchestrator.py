@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from typing import Any, Mapping, Sequence
 
 from dialogic.agents import Agent
-from dialogic.controller import ControllerState, TurnController, make_controller
-from dialogic.llm import LLM, CallContext
-from dialogic.memory import Memory
+from dialogic.controller import ControllerState, TurnController, TurnDecision, make_controller
+from dialogic.llm import LLM, CallContext, Completion
+from dialogic.memory import LedgerDelta, Memory, Post
 from dialogic.prompts import PromptLibrary
 from dialogic.protocol import normalize_answer
 from dialogic.synthesis import FinalAnswer, Synthesizer, make_synthesizer
@@ -65,6 +65,67 @@ class DialogueResult:
         return {"method": METHOD, **r}
 
 
+
+@dataclass
+class _Turn:
+    agent: Agent
+    decision: TurnDecision
+    hard_cap: int
+    post: Post
+    completion: Completion
+    note: Completion | None
+
+
+@dataclass
+class _Acc:
+    """Per-problem running totals."""
+
+    tokens: dict[str, int] = field(default_factory=lambda: {"core": 0, "scratchpad": 0, "synthesis": 0, "prompt": 0,
+                                                             "prompt_cache_read": 0, "prompt_cache_write": 0})
+    answers: list[dict[str, str | None]] = field(default_factory=list)
+    agree: list[bool] = field(default_factory=list)
+    protocol_errors: int = 0
+
+    def add_prompt(self, prompt: int, read: int, write: int) -> None:
+        self.tokens["prompt"] += prompt
+        self.tokens["prompt_cache_read"] += read
+        self.tokens["prompt_cache_write"] += write
+
+    def add_turn(self, t: _Turn, state: ControllerState) -> None:
+        self.tokens["core"] += t.post.completion_tokens
+        for c in (t.note, t.completion):
+            if c is not None:
+                self.add_prompt(c.prompt_tokens, c.prompt_cache_read_tokens, c.prompt_cache_write_tokens)
+        if t.note is not None:
+            self.tokens["scratchpad"] += t.note.completion_tokens
+        self.answers.append(dict(state.answers))
+        self.agree.append(state.answers_agree)
+        self.protocol_errors += t.post.protocol_error
+
+
+def _turn_row(problem_id: str, t: _Turn, delta: LedgerDelta, scratch: int) -> dict[str, Any]:
+    post = t.post
+    return {
+        "problem_id": problem_id,
+        "turn": post.turn,
+        "agent": t.agent.id,
+        "objective": t.agent.objective,
+        "answer": post.answer,
+        "stance": post.stance,
+        "consensus": post.consensus,
+        "ledger_ops": [asdict(op) for op in post.ledger_ops],
+        "ledger_delta": {**asdict(delta), "rejected": [[asdict(op), why] for op, why in delta.rejected]},
+        "soft_limit": t.decision.soft_limit,
+        "hard_cap": t.hard_cap,
+        "scratch_budget": t.decision.scratch_budget,
+        "scratch_tokens": scratch,
+        "tokens": post.completion_tokens,
+        "truncated": post.truncated,
+        "protocol_error": post.protocol_error,
+        "protocol_errors": list(post.protocol_errors),
+    }
+
+
 class DialogueRunner:
     def __init__(
         self,
@@ -77,6 +138,7 @@ class DialogueRunner:
         seed: int = 0,
         max_turns: int,
         first_speaker: str = "seeded",
+        independent_openings: bool = False,
     ):
         if len(agents) != 2:
             raise ValueError("dialogue needs exactly two agents")
@@ -89,6 +151,7 @@ class DialogueRunner:
         self.seed = seed
         self.max_turns = max_turns
         self.first_speaker = first_speaker
+        self.independent_openings = independent_openings
 
     @classmethod
     def from_config(cls, cfg: Mapping[str, Any], llm: LLM, tracer: Tracer | None = None, prompts: PromptLibrary | None = None) -> DialogueRunner:
@@ -110,77 +173,65 @@ class DialogueRunner:
             seed=cfg.get("seed", 0),
             max_turns=ctl["max_turns"],
             first_speaker=cfg.get("first_speaker", "seeded"),
+            independent_openings=cfg.get("independent_openings", False),
         )
 
     def _ctx(self, problem: Problem, agent: str, space: str, turn: int | None) -> CallContext:
         return CallContext(problem_id=problem.id, method=METHOD, agent=agent, space=space, turn=turn)
 
+    async def _work(self, mem: Memory, problem: Problem, agent: Agent, decision: TurnDecision, turn: int, opening: bool) -> _Turn:
+        """One agent's private work (if budgeted) and post for `turn`. Does not touch the shared thread."""
+        hard_cap = max(1, int(decision.soft_limit * self.k))
+        note = None
+        if decision.scratch_budget > 0:
+            note = await agent.think(mem.view_for(agent.id), decision.scratch_budget, self._ctx(problem, agent.id, "scratchpad", turn),
+                                     turn=turn, opening=opening)
+            mem.write_scratch(agent.id, note.text, turn=turn)  # private: the other agent's view never includes it
+        post, c = await agent.speak(mem.view_for(agent.id), decision.soft_limit, hard_cap, self._ctx(problem, agent.id, "core", turn),
+                                    turn=turn, opening=opening)
+        return _Turn(agent, decision, hard_cap, post, c, note)
+
     async def run(self, problem: Problem) -> DialogueResult:
         mem = Memory(problem.question, self.agent_ids)
         order = speaker_order(self.agent_ids, problem.id, self.seed, self.first_speaker)
         state = ControllerState.initial(problem.id, self.agent_ids, self.max_turns)
-        prompt_tokens = 0
-        tokens = {"core": 0, "scratchpad": 0, "synthesis": 0}
-        answers_traj: list[dict[str, str | None]] = []
-        agree_traj: list[bool] = []
-        protocol_errors = 0
+        acc = _Acc()
 
-        while True:
-            decision = self.controller.decide(state)
+        def decide(st: ControllerState) -> TurnDecision:
+            d = self.controller.decide(st)
             if self.tracer:
-                self.tracer.decision({"problem_id": problem.id, "turn": state.turn, "features": state.features(), **asdict(decision)})
-            if decision.stop:
-                break
+                self.tracer.decision({"problem_id": problem.id, "turn": st.turn, "features": st.features(), **asdict(d)})
+            return d
 
-            turn = state.turn
-            agent = self.agents[order[turn % 2]]
-            hard_cap = max(1, int(decision.soft_limit * self.k))
-
-            scratch = 0
-            if decision.scratch_budget > 0:
-                note = await agent.think(mem.view_for(agent.id), decision.scratch_budget, self._ctx(problem, agent.id, "scratchpad", turn))
-                mem.write_scratch(agent.id, note.text)
-                scratch = note.completion_tokens
-                prompt_tokens += note.prompt_tokens
-
-            post, c = await agent.speak(mem.view_for(agent.id), decision.soft_limit, hard_cap, self._ctx(problem, agent.id, "core", turn))
-            prompt_tokens += c.prompt_tokens
-            delta = mem.post(post)
-            state = state.after(post, delta, ledger_agreed=len(mem.ledger.agreed()), scratch_tokens=scratch)
-
-            tokens["core"] += post.completion_tokens
-            tokens["scratchpad"] += scratch
-            answers_traj.append(dict(state.answers))
-            agree_traj.append(state.answers_agree)
-            protocol_errors += post.protocol_error
-
+        def commit(t: _Turn) -> None:
+            nonlocal state
+            delta = mem.post(t.post)
+            scratch = t.note.completion_tokens if t.note else 0
+            state = state.after(t.post, delta, ledger_agreed=len(mem.ledger.agreed()), scratch_tokens=scratch)
+            acc.add_turn(t, state)
             if self.tracer:
-                self.tracer.turn(
-                    {
-                        "problem_id": problem.id,
-                        "turn": turn,
-                        "agent": agent.id,
-                        "objective": agent.objective,
-                        "answer": post.answer,
-                        "stance": post.stance,
-                        "consensus": post.consensus,
-                        "ledger_ops": [asdict(op) for op in post.ledger_ops],
-                        "ledger_delta": {**asdict(delta), "rejected": [[asdict(op), why] for op, why in delta.rejected]},
-                        "soft_limit": decision.soft_limit,
-                        "hard_cap": hard_cap,
-                        "scratch_budget": decision.scratch_budget,
-                        "scratch_tokens": scratch,
-                        "tokens": post.completion_tokens,
-                        "truncated": post.truncated,
-                        "protocol_error": post.protocol_error,
-                        "protocol_errors": list(post.protocol_errors),
-                    }
-                )
+                self.tracer.turn(_turn_row(problem.id, t, delta, scratch))
+
+        decision = decide(state)
+        if self.independent_openings and not decision.stop and self.max_turns >= 2:
+            # Round one in parallel: neither opening post sees the other; both enter the thread in speaker order.
+            d1 = decide(replace(state, turn=1))
+            openings = await asyncio.gather(
+                self._work(mem, problem, self.agents[order[0]], decision, 0, True),
+                self._work(mem, problem, self.agents[order[1]], d1, 1, True),
+            )
+            for t in openings:
+                commit(t)
+            decision = decide(state)
+
+        while not decision.stop:
+            commit(await self._work(mem, problem, self.agents[order[state.turn % 2]], decision, state.turn, False))
+            decision = decide(state)
 
         final = await self.synthesizer.final(mem.core_view(), self._ctx(problem, self._writer_label(), "synthesis", None))
-        tokens["synthesis"] = final.completion_tokens
-        tokens["generated"] = tokens["core"] + tokens["scratchpad"] + tokens["synthesis"]
-        tokens["prompt"] = prompt_tokens + final.prompt_tokens
+        acc.tokens["synthesis"] = final.completion_tokens
+        acc.add_prompt(final.prompt_tokens, final.prompt_cache_read_tokens, final.prompt_cache_write_tokens)
+        acc.tokens["generated"] = acc.tokens["core"] + acc.tokens["scratchpad"] + acc.tokens["synthesis"]
 
         gold = normalize_answer(problem.gold) or problem.gold
         return DialogueResult(
@@ -191,14 +242,14 @@ class DialogueRunner:
             stop_reason=decision.reason,
             turns=state.turn,
             first_speaker=order[0],
-            tokens=tokens,
-            answer_trajectory=answers_traj,
-            agreement_trajectory=agree_traj,
+            tokens=acc.tokens,
+            answer_trajectory=acc.answers,
+            agreement_trajectory=acc.agree,
             answer_changes=dict(state.answer_changes),
             ledger_agreed=state.ledger_agreed,
             ledger_total=len(mem.ledger.snapshot()),
             ledger_disputes=state.ledger_disputes,
-            protocol_errors=protocol_errors,
+            protocol_errors=acc.protocol_errors,
         )
 
     def _writer_label(self) -> str:

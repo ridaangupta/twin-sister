@@ -171,8 +171,12 @@ async def run(cfg: dict[str, Any], raw_cfg: str, match: str | None = None, *, ru
         "methods": {m: summarize(rows) for m, rows in results.items()},
         "errors": len(problems) * len(results) - sum(len(rs) for rs in results.values()),
         "usage": llm.usage.snapshot(),
-        "cost_usd_billed": cost_usd(total.billed_prompt_tokens, total.billed_completion_tokens, pricing),
-        "cost_usd_uncached": cost_usd(total.prompt_tokens, total.completion_tokens, pricing),
+        # billed: excludes local-cache hits, prices API prompt-cache reads/writes at their rates
+        "cost_usd_billed": cost_usd(total.billed_prompt_tokens, total.billed_completion_tokens, pricing,
+                                    cache_read_tokens=total.billed_prompt_cache_read_tokens,
+                                    cache_write_tokens=total.billed_prompt_cache_write_tokens),
+        # what the whole run would cost from scratch with no prompt caching at all
+        "cost_usd_no_prompt_cache": cost_usd(total.prompt_tokens, total.completion_tokens, pricing),
     }
     meta["finished_at"] = utc_now()
     (run_dir / "meta.json").write_text(json.dumps(meta, indent=2, default=str))

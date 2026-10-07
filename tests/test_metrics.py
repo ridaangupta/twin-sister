@@ -26,6 +26,11 @@ def test_bootstrap_ci_brackets_mean():
 def test_cost():
     assert cost_usd(1_000_000, 500_000, {"input_per_mtok": 1.0, "output_per_mtok": 4.0}) == 3.0
     assert cost_usd(10, 10, None) is None
+    pricing = {"input_per_mtok": 1.0, "output_per_mtok": 4.0, "cache_read_per_mtok": 0.1, "cache_write_per_mtok": 1.25}
+    # 1M prompt tokens: 600k read from cache, 200k written, 200k plain
+    assert abs(cost_usd(1_000_000, 0, pricing, cache_read_tokens=600_000, cache_write_tokens=200_000) - (0.2 + 0.06 + 0.25)) < 1e-9
+    # without cache rates configured, cache tokens cost the input rate
+    assert cost_usd(1_000_000, 0, {"input_per_mtok": 1.0, "output_per_mtok": 4.0}, cache_read_tokens=500_000) == 1.0
 
 
 def test_summarize_dialogue_and_baseline_rows():

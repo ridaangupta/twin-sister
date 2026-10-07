@@ -74,7 +74,6 @@ def test_stops_on_mutual_consensus_with_matching_answers():
         [post(0, "A", consensus="yes")],  # only one agent has spoken
         [post(0, "A", consensus="yes"), post(1, "B", consensus="no")],  # one-sided
         [post(0, "A", consensus="yes"), post(1, "B", answer="40", consensus="yes")],  # answers differ
-        [post(0, "A", answer="none", consensus="yes"), post(1, "B", answer="none", consensus="yes")],  # no answer
         [post(0, "A", consensus="yes"), post(1, "B", consensus="yes"), post(2, "A", consensus="no")],  # A withdrew
     ],
 )
@@ -156,3 +155,11 @@ def test_state_is_immutable():
     assert s.turn == 0 and s.answers["A"] is None and s2.answers["A"] == "36"
     with pytest.raises(TypeError):
         s2.answers["A"] = "1"  # type: ignore[index]
+
+
+def test_stops_when_both_agree_there_is_no_answer():
+    s = run([post(0, "A", answer="none", consensus="yes"), post(1, "B", answer="none", consensus="yes")])
+    assert not s.mutual_consensus and s.consensus_without_answer
+    assert HeuristicController(max_turns=8).decide(s).reason == "consensus_no_answer"
+    one_sided = run([post(0, "A", answer="none", consensus="yes"), post(1, "B", answer="none", consensus="no")])
+    assert not HeuristicController(max_turns=8).decide(one_sided).stop

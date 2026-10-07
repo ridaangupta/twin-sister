@@ -14,7 +14,7 @@ from typing import Any, Mapping
 from dialogic.agents import Agent
 from dialogic.llm import CallContext
 from dialogic.memory import CoreView
-from dialogic.prompts import render_facts, render_thread
+from dialogic.prompts import log_blocks, problem_block, render_facts
 from dialogic.protocol import extract_answer
 
 _SOLUTION = re.compile(r"SOLUTION[*_`]*\s*:(.*?)(?=^[ \t>*_`-]*ANSWER[*_`]*\s*:|\Z)", re.IGNORECASE | re.DOTALL | re.MULTILINE)
@@ -30,6 +30,8 @@ class FinalAnswer:
     prompt_tokens: int
     completion_tokens: int
     strategy: str
+    prompt_cache_read_tokens: int = 0
+    prompt_cache_write_tokens: int = 0
 
 
 def extract_final(text: str) -> tuple[str | None, int, int]:
@@ -56,22 +58,24 @@ class SingleWriter(Synthesizer):
         self.writer = writer
         self.max_tokens = max_tokens
 
-    def messages(self, core: CoreView) -> list[dict[str, str]]:
+    def messages(self, core: CoreView) -> list[dict[str, Any]]:
         if not isinstance(core, CoreView):
             raise TypeError("synthesis reads core only")
-        user = self.writer.prompts.render(
-            "final_writer",
-            task=core.task,
-            agreed_facts=render_facts(core.agreed_facts),
-            open_claims=render_facts(core.open_claims),
-            thread=render_thread(core.thread),
+        tail = self.writer.prompts.render(
+            "final_writer", agreed_facts=render_facts(core.agreed_facts), open_claims=render_facts(core.open_claims)
         )
-        return [{"role": "system", "content": self.writer.system_prompt()}, {"role": "user", "content": user}]
+        return [
+            {"role": "system", "content": self.writer.system_prompt()},
+            # Core only (no notes). One call that is never reused, so no cache breakpoints: writing costs extra.
+            {"role": "user", "content": [problem_block(core.task, cache=False)] + log_blocks(core.thread, (), cache=False)},
+            {"role": "user", "content": tail},
+        ]
 
     async def final(self, core: CoreView, ctx: CallContext) -> FinalAnswer:
         c = await self.writer.llm.complete(ctx, self.messages(core), max_tokens=self.max_tokens, temperature=self.writer.temperature)
         answer, steps, length = extract_final(c.text)
-        return FinalAnswer(c.text, answer, steps, length, c.prompt_tokens, c.completion_tokens, self.name)
+        return FinalAnswer(c.text, answer, steps, length, c.prompt_tokens, c.completion_tokens, self.name,
+                           c.prompt_cache_read_tokens, c.prompt_cache_write_tokens)
 
 
 def make_synthesizer(cfg: Mapping[str, Any], agents: Mapping[str, Agent]) -> Synthesizer:

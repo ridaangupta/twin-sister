@@ -1,0 +1,60 @@
+{
+  "run_id": "20261006T213143Z_syn_dev50_baselines",
+  "model": "gpt-5.6-luna",
+  "methods": {
+    "direct": {
+      "n": 50,
+      "accuracy": 0.08,
+      "accuracy_ci95": [
+        0.02,
+        0.16
+      ],
+      "no_answer_rate": 0,
+      "tokens_mean": {
+        "generated": 7.14,
+        "prompt": 483.7
+      }
+    },
+    "cot": {
+      "n": 50,
+      "accuracy": 0.58,
+      "accuracy_ci95": [
+        0.44,
+        0.72
+      ],
+      "no_answer_rate": 0.14,
+      "tokens_mean": {
+        "generated": 368.92,
+        "prompt": 518.7
+      }
+    },
+    "self_consistency": {
+      "n": 50,
+      "accuracy": 0.7,
+      "accuracy_ci95": [
+        0.58,
+        0.82
+      ],
+      "no_answer_rate": 0.02,
+      "tokens_mean": {
+        "generated": 1453.48,
+        "prompt": 2074.8
+      },
+      "samples_mean": 4
+    }
+  },
+  "errors": 0,
+  "usage": {
+    "baseline/baseline": {
+      "calls": 300,
+      "cached_calls": 0,
+      "prompt_tokens": 153860,
+      "completion_tokens": 91477,
+      "reasoning_tokens": 0,
+      "billed_prompt_tokens": 153860,
+      "billed_completion_tokens": 91477
+    }
+  },
+  "cost_usd_billed": 0.1405444,
+  "cost_usd_uncached": 0.1405444
+}

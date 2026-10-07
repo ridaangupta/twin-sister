@@ -92,6 +92,11 @@ class ControllerState:
         """Every agent's latest post says CONSENSUS: yes, with the same non-empty answer."""
         return self.answers_agree and all(self.consensus[a] for a in self.agent_ids)
 
+    @property
+    def consensus_without_answer(self) -> bool:
+        """Every agent says CONSENSUS: yes but none has an answer (e.g. all agree the problem is unsolvable)."""
+        return all(self.consensus[a] for a in self.agent_ids) and all(self.answers[a] is None for a in self.agent_ids)
+
     def features(self) -> dict[str, float]:
         """Phase 2 controller inputs. Key order is stable; add new keys at the end."""
         last_stance = self.stances[-1] if self.stances else None

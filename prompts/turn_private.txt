@@ -1,0 +1,7 @@
+AGREED FACTS:
+{agreed_facts}
+
+OPEN CLAIMS:
+{open_claims}
+
+MODE: PRIVATE WORK, before your post for turn {turn}. {opening}You have about {budget} tokens. Terse notes only; no trailer.

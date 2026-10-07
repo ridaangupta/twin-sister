@@ -48,6 +48,8 @@ class HeuristicController(TurnController):
             stop, reason = True, "max_turns"
         elif state.mutual_consensus:
             stop, reason = True, "consensus"
+        elif state.consensus_without_answer:  # repeating "no answer" never recovers; let synthesis try
+            stop, reason = True, "consensus_no_answer"
         else:
             stop, reason = False, "continue"
 

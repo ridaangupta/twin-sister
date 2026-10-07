@@ -41,8 +41,8 @@ def mem():
 
 def test_each_agent_sees_only_its_own_pad(mem):
     va, vb = mem.view_for("A"), mem.view_for("B")
-    assert va.scratchpad == (f"private A note {CANARY_A}",)
-    assert vb.scratchpad == (f"private B note {CANARY_B}",)
+    assert [n.text for n in va.scratchpad] == [f"private A note {CANARY_A}"]
+    assert [n.text for n in vb.scratchpad] == [f"private B note {CANARY_B}"]
     assert not _leaks(vb, CANARY_A)
     assert not _leaks(va, CANARY_B)
 
@@ -71,6 +71,16 @@ def test_views_are_snapshots(mem):
     assert len(vb.scratchpad) == 1 and len(vb.thread) == 2
     with pytest.raises(dataclasses.FrozenInstanceError):
         vb.scratchpad = ()  # type: ignore[misc]
+
+
+def test_notes_record_the_turn_they_precede():
+    m = Memory("t", ["A", "B"])
+    m.write_scratch("A", "before first post")
+    m.post(Post.from_text(0, "A", "ANSWER: 1\nSTANCE: unsure\nCONSENSUS: no"))
+    m.write_scratch("A", "before second post")
+    m.write_scratch("A", "explicit", turn=5)
+    assert [(n.turn, n.text, n.seen) for n in m.view_for("A").scratchpad] == [
+        (0, "before first post", 0), (1, "before second post", 1), (5, "explicit", 1)]
 
 
 def test_writes_go_only_to_the_named_pad():

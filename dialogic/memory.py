@@ -8,11 +8,17 @@ Visibility is enforced by construction: agents never receive `Memory`, only an
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, NamedTuple
 
 from dialogic.protocol import LedgerOp, Stance, parse_post
 
 FactStatus = Literal["pending", "agreed", "disputed"]
+
+
+class Note(NamedTuple):
+    turn: int  # the post this note was written before
+    text: str
+    seen: int  # posts in the thread when it was written; orders notes among posts in true time order
 
 
 @dataclass(frozen=True)
@@ -156,13 +162,13 @@ class AgentView(_LedgerAccessors):
     task: str
     thread: tuple[Post, ...]
     ledger: tuple[Fact, ...]
-    scratchpad: tuple[str, ...]  # the viewing agent's own notes only
+    scratchpad: tuple[Note, ...]  # the viewing agent's own notes only
 
 
 @dataclass
 class Scratchpad:
     owner: str
-    notes: list[str] = field(default_factory=list)
+    notes: list[Note] = field(default_factory=list)
 
 
 class Memory:
@@ -192,9 +198,11 @@ class Memory:
     def core_view(self) -> CoreView:
         return CoreView(task=self.task, thread=tuple(self.thread), ledger=self.ledger.snapshot())
 
-    def write_scratch(self, agent_id: str, note: str) -> None:
+    def write_scratch(self, agent_id: str, note: str, turn: int | None = None) -> None:
+        """Append to the agent's own pad; `turn` is the post the note precedes (default: the next post)."""
         self._check(agent_id)
-        self._pads[agent_id].notes.append(note)
+        seen = len(self.thread)
+        self._pads[agent_id].notes.append(Note(seen if turn is None else turn, note, seen))
 
     def post(self, post: Post) -> LedgerDelta:
         self._check(post.agent)

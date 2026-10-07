@@ -44,11 +44,29 @@ def mind_changes(trajectory: Sequence[Mapping[str, str | None]]) -> Counter:
     return out
 
 
-def cost_usd(prompt_tokens: int, completion_tokens: int, pricing: Mapping[str, float] | None) -> float | None:
-    """pricing: {input_per_mtok, output_per_mtok} in USD. None when no pricing is configured."""
+def cost_usd(
+    prompt_tokens: int,
+    completion_tokens: int,
+    pricing: Mapping[str, float] | None,
+    *,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
+) -> float | None:
+    """USD from token counts. pricing: {input_per_mtok, output_per_mtok, cache_read_per_mtok?, cache_write_per_mtok?}.
+
+    Prompt-cache reads/writes are priced at the input rate unless their own rates are configured.
+    None when no pricing is configured.
+    """
     if not pricing:
         return None
-    return prompt_tokens / 1e6 * pricing["input_per_mtok"] + completion_tokens / 1e6 * pricing["output_per_mtok"]
+    rate_in = pricing["input_per_mtok"]
+    uncached = prompt_tokens - cache_read_tokens - cache_write_tokens
+    return (
+        uncached * rate_in
+        + cache_read_tokens * pricing.get("cache_read_per_mtok", rate_in)
+        + cache_write_tokens * pricing.get("cache_write_per_mtok", rate_in)
+        + completion_tokens * pricing["output_per_mtok"]
+    ) / 1e6
 
 
 def _mean(rows: Iterable[Mapping[str, Any]], *path: str) -> float | None:

@@ -38,10 +38,13 @@ ITEMS = [
     "gloves", "hats", "lanterns", "maps", "notebooks", "onions", "pears", "pillows", "plates", "potatoes",
     "quilts", "radishes", "sandals", "saucers", "teacups", "thimbles", "umbrellas", "vases", "wagons", "whisks",
 ]
-# Closes the world so "the total number of items X has" is well defined.
+# Closes the world so "the total number of items X has" is well defined, and rules out
+# "cannot be determined" as an answer (every generated problem is solvable; see `solve`).
 PREAMBLE = (
     "Each person has only the items mentioned below, and every quantity is a whole number. "
-    '"The total number of items X has" means the sum of all of X\'s quantities mentioned below.'
+    '"The total number of items X has" means the sum of all of X\'s quantities mentioned below. '
+    "The problem is consistent and has exactly one answer, which is a whole number: if your working "
+    "leads to a contradiction or a non-whole number, an earlier step is wrong."
 )
 FRACTIONS = {2: "half", 3: "one third", 4: "one quarter", 5: "one fifth"}
 

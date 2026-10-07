@@ -88,3 +88,8 @@ def test_normalize_answer(raw, expected):
 @pytest.mark.parametrize("raw,expected", [("F3", "F3"), ("f12", "F12"), ("3", "F3"), ("[F07]", "F7"), ("Fx", None)])
 def test_normalize_fact_id(raw, expected):
     assert normalize_fact_id(raw) == expected
+
+
+def test_blank_optional_lines_are_ignored_not_errors():
+    p = parse_post("x\nANSWER: 5\nSTANCE: agree\nCONSENSUS: no\nFACT+:\nFACT_OK: none\nFACT_DISPUTE: \nFACT_OK: (optional)")
+    assert p.ledger_ops == () and not p.protocol_error

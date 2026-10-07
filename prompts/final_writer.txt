@@ -1,16 +1,10 @@
-The dialogue has ended. Using only the shared material below, write the final answer to the problem.
-
-PROBLEM:
-{task}
-
 AGREED FACTS:
 {agreed_facts}
 
 OPEN CLAIMS:
 {open_claims}
 
-SHARED THREAD:
-{thread}
+The dialogue has ended. Using only the problem and the shared thread above, write the final answer.
 
 Write exactly this format and nothing else:
 

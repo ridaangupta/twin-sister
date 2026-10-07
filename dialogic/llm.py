@@ -53,8 +53,10 @@ class Completion:
     reasoning_tokens: int
     finish_reason: str | None
     latency_s: float
-    cached: bool
+    cached: bool  # served from our local response cache (no API call)
     system_fingerprint: str | None = None
+    prompt_cache_read_tokens: int = 0  # API prompt cache: prompt tokens read from cache (billed at a discount)
+    prompt_cache_write_tokens: int = 0  # API prompt cache: prompt tokens written to cache (billed at a premium)
 
     @property
     def truncated(self) -> bool:
@@ -125,19 +127,27 @@ class Usage:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     reasoning_tokens: int = 0
-    billed_prompt_tokens: int = 0  # excludes cache hits
+    prompt_cache_read_tokens: int = 0
+    prompt_cache_write_tokens: int = 0
+    billed_prompt_tokens: int = 0  # everything below excludes local-cache hits
     billed_completion_tokens: int = 0
+    billed_prompt_cache_read_tokens: int = 0
+    billed_prompt_cache_write_tokens: int = 0
 
     def add(self, c: Completion) -> None:
         self.calls += 1
         self.prompt_tokens += c.prompt_tokens
         self.completion_tokens += c.completion_tokens
         self.reasoning_tokens += c.reasoning_tokens
+        self.prompt_cache_read_tokens += c.prompt_cache_read_tokens
+        self.prompt_cache_write_tokens += c.prompt_cache_write_tokens
         if c.cached:
             self.cached_calls += 1
         else:
             self.billed_prompt_tokens += c.prompt_tokens
             self.billed_completion_tokens += c.completion_tokens
+            self.billed_prompt_cache_read_tokens += c.prompt_cache_read_tokens
+            self.billed_prompt_cache_write_tokens += c.prompt_cache_write_tokens
 
 
 @dataclass
@@ -167,6 +177,9 @@ _RETRYABLE = (openai.RateLimitError, openai.APITimeoutError, openai.APIConnectio
 def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, _RETRYABLE):
         return True
+    # Sporadic false-positive policy flag on reasoning models; the same prompt passes on retry.
+    if isinstance(exc, openai.BadRequestError) and getattr(exc, "code", None) == "invalid_prompt":
+        return True
     return isinstance(exc, openai.APIStatusError) and exc.status_code >= 500
 
 
@@ -180,6 +193,7 @@ class LLM:
         concurrency: int = 8,
         seed: int | None = None,
         reasoning_effort: str | None = None,
+        prompt_cache: str | None = None,
         timeout_s: float = 120.0,
         max_attempts: int = 6,
         retry_wait: Any = None,
@@ -193,6 +207,9 @@ class LLM:
         self.cache = cache
         self.seed = seed
         self.reasoning_effort = reasoning_effort  # None = model default; omitted from the request
+        if prompt_cache not in (None, "explicit"):
+            raise ValueError("prompt_cache must be null or 'explicit'")
+        self.prompt_cache = prompt_cache  # "explicit": send breakpoint markers (GPT-5.6+); None: strip them
         self.timeout_s = timeout_s
         self.max_attempts = max_attempts
         self.retry_wait = retry_wait or wait_random_exponential(multiplier=1, max=60)
@@ -210,6 +227,7 @@ class LLM:
             concurrency=cfg.get("concurrency", 8),
             seed=cfg.get("seed"),
             reasoning_effort=cfg.get("reasoning_effort"),
+            prompt_cache=cfg.get("prompt_cache"),
             timeout_s=cfg.get("timeout_s", 120.0),
         )
 
@@ -261,13 +279,17 @@ class LLM:
                     "finish_reason": completion.finish_reason,
                     "latency_s": round(completion.latency_s, 3),
                     "cached": completion.cached,
+                    "prompt_cache_read_tokens": completion.prompt_cache_read_tokens,
+                    "prompt_cache_write_tokens": completion.prompt_cache_write_tokens,
                     "system_fingerprint": completion.system_fingerprint,
                 }
             )
         return completion
 
     async def _call_api(self, ctx: CallContext, messages: Messages, max_tokens: int, temperature: float | None) -> Completion:
-        kwargs: dict[str, Any] = {"model": self.model, "messages": messages, "max_completion_tokens": max_tokens}
+        kwargs: dict[str, Any] = {"model": self.model, "messages": self._wire(messages), "max_completion_tokens": max_tokens}
+        if self.prompt_cache:
+            kwargs["extra_body"] = {"prompt_cache_options": {"mode": self.prompt_cache}}
         if temperature is not None:  # reasoning models reject explicit temperature
             kwargs["temperature"] = temperature
         if self.seed is not None:
@@ -291,6 +313,7 @@ class LLM:
         choice = resp.choices[0]
         usage = resp.usage
         details = getattr(usage, "completion_tokens_details", None)
+        pdetails = getattr(usage, "prompt_tokens_details", None)
         return Completion(
             text=choice.message.content or "",
             prompt_tokens=usage.prompt_tokens,
@@ -300,4 +323,18 @@ class LLM:
             latency_s=latency,
             cached=False,
             system_fingerprint=getattr(resp, "system_fingerprint", None),
+            prompt_cache_read_tokens=(getattr(pdetails, "cached_tokens", None) or 0) if pdetails else 0,
+            prompt_cache_write_tokens=(getattr(pdetails, "cache_write_tokens", None) or 0) if pdetails else 0,
         )
+
+    def _wire(self, messages: Messages) -> Messages:
+        """Messages as sent: cache breakpoint markers kept only when explicit prompt caching is on."""
+        if self.prompt_cache:
+            return messages
+        out = []
+        for m in messages:
+            c = m["content"]
+            if isinstance(c, list):
+                c = [{k: v for k, v in b.items() if k != "prompt_cache_breakpoint"} for b in c]
+            out.append({**m, "content": c})
+        return out

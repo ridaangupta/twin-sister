@@ -23,12 +23,13 @@ Stance = Literal["agree", "disagree", "unsure"]
 OpKind = Literal["add", "confirm", "dispute"]
 
 _FIELD = re.compile(
-    r"^[ \t>*_`-]*(ANSWER|STANCE|CONSENSUS|FACT\+|FACT_OK|FACT_DISPUTE)[*_`]*\s*:[*_`]*\s*(.*?)[ \t*_`]*$",
+    r"^[ \t>*_`-]*(ANSWER|STANCE|CONSENSUS|FACT\+|FACT_OK|FACT_DISPUTE)[*_`]*[ \t]*:[*_`]*[ \t]*(.*?)[ \t*_`]*$",
     re.IGNORECASE | re.MULTILINE,
 )
 _NUMBER = re.compile(r"-?(?:\d[\d,]*(?:\.\d+)?|\.\d+)")
 _FACT_ID = re.compile(r"^\[?F?(\d+)\]?$", re.IGNORECASE)
-_ANSWER_LINE = re.compile(r"^[ \t>*_`-]*ANSWER[*_`]*\s*:[*_`]*\s*(.+)$", re.IGNORECASE | re.MULTILINE)
+_EMPTY = {"", "none", "n/a", "-", "(none)", "(optional)"}
+_ANSWER_LINE = re.compile(r"^[ \t>*_`-]*ANSWER[*_`]*[ \t]*:[*_`]*[ \t]*(.+)$", re.IGNORECASE | re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -111,9 +112,10 @@ def parse_post(text: str) -> ParsedPost:
             else:
                 consensus = False
                 errors.append(f"invalid CONSENSUS: {value!r}")
+        elif value.lower() in _EMPTY:
+            continue  # the trailer's optional lines are often written out blank
         elif name == "FACT+":
-            if value:
-                ops.append(LedgerOp("add", text=value))
+            ops.append(LedgerOp("add", text=value))
         else:
             fid = normalize_fact_id(value)
             if fid is None:

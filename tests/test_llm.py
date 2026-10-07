@@ -233,3 +233,49 @@ async def test_reasoning_effort_is_sent_keyed_and_traced(tmp_path, cache):
     default = FakeClient()
     await LLM("m", cache=cache, clients={"A": default}).complete(ctx(), MSGS, max_tokens=16)
     assert len(default.calls) == 1 and "reasoning_effort" not in default.calls[0]
+
+
+BLOCK_MSGS = [
+    {"role": "system", "content": "sys"},
+    {"role": "user", "content": [{"type": "text", "text": "PROBLEM: x", "prompt_cache_breakpoint": {"mode": "explicit"}}]},
+    {"role": "user", "content": "tail"},
+]
+
+
+async def test_breakpoints_stripped_unless_explicit_caching():
+    plain = FakeClient()
+    await LLM("m", clients={"A": plain}).complete(ctx(), BLOCK_MSGS, max_tokens=8)
+    sent = plain.calls[0]
+    assert "extra_body" not in sent
+    assert sent["messages"][1]["content"] == [{"type": "text", "text": "PROBLEM: x"}]
+
+    explicit = FakeClient()
+    await LLM("m", prompt_cache="explicit", clients={"A": explicit}).complete(ctx(), BLOCK_MSGS, max_tokens=8)
+    sent = explicit.calls[0]
+    assert sent["extra_body"] == {"prompt_cache_options": {"mode": "explicit"}}
+    assert sent["messages"][1]["content"][0]["prompt_cache_breakpoint"] == {"mode": "explicit"}
+
+    with pytest.raises(ValueError):
+        LLM("m", prompt_cache="implicit")
+
+
+async def test_prompt_cache_tokens_parsed_tracked_and_traced(tmp_path):
+    resp = _response("ok", prompt_tokens=2000)
+    resp.usage.prompt_tokens_details = SimpleNamespace(cached_tokens=1500, cache_write_tokens=400)
+    with Tracer(tmp_path / "run", "r") as tracer:
+        llm = LLM("m", tracer=tracer, prompt_cache="explicit", clients={"A": FakeClient(resp)})
+        c = await llm.complete(ctx(), BLOCK_MSGS, max_tokens=8)
+    assert (c.prompt_cache_read_tokens, c.prompt_cache_write_tokens) == (1500, 400)
+    u = llm.usage.total()
+    assert (u.prompt_cache_read_tokens, u.billed_prompt_cache_read_tokens, u.billed_prompt_cache_write_tokens) == (1500, 1500, 400)
+    row = json.loads((tmp_path / "run" / "calls.jsonl").read_text().splitlines()[0])
+    assert (row["prompt_cache_read_tokens"], row["prompt_cache_write_tokens"]) == (1500, 400)
+
+
+async def test_retries_sporadic_invalid_prompt_flag():
+    req = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+    flagged = openai.BadRequestError("flagged", response=httpx.Response(400, request=req),
+                                     body={"code": "invalid_prompt", "message": "flagged"})
+    client = FakeClient(flagged, _response("ok"))
+    r = await LLM("m", clients={"A": client}, retry_wait=wait_none()).complete(ctx(), MSGS, max_tokens=8)
+    assert r.text == "ok" and len(client.calls) == 2

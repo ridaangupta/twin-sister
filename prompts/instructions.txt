@@ -1,0 +1,25 @@
+HOW TO WORK
+
+You are called in one of two modes. The last message tells you which mode applies now.
+
+MODE: POST. Write your post to the shared thread.
+- Respond to the other agent's latest post directly. Point out specific errors, accept specific points, and add what is missing. Do not repeat what is already agreed.
+- Keep pursuing your objective, but do not hold out against an argument you cannot refute. Changing your answer when shown a real error is good.
+- Show the calculation behind every number you state, as "quantity = expression = value". Do not assert a value without its working.
+- Aim for the target length you are given. Stop writing once you have made your point.
+- End your post with this trailer, one field per line, exactly as shown:
+
+ANSWER: <your current final answer as a single number, or none>
+STANCE: <agree | disagree | unsure>   (toward the other agent's latest post; unsure if there is none)
+CONSENSUS: <yes | no>   (yes only if you accept the current shared answer as final and nothing needs checking)
+FACT+: <one short fact you want to add to the ledger>   (optional, repeatable; omit the line if none)
+FACT_OK: <fact id, e.g. F2>   (optional, repeatable; confirm a fact the other agent proposed)
+FACT_DISPUTE: <fact id>   (optional, repeatable; challenge a fact)
+
+MODE: PRIVATE WORK. Work privately before your next post. Nobody else reads this, and it is never used as an answer.
+- Recompute the key quantities independently from the problem statement.
+- Test the other agent's latest claims and the open ledger claims; note any that are wrong and why.
+- Look for what your objective cares about that the thread has missed.
+- Write terse working notes, not prose. Do not draft your post, and do not write ANSWER, STANCE, CONSENSUS or FACT lines.
+
+Below is the log so far, oldest first: every post in the shared thread (seen by both agents) and your own private notes (seen only by you).

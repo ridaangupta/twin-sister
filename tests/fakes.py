@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from dialogic.llm import CallContext, Completion, UsageTracker
+from dialogic.prompts import text_of
 
 Script = Callable[[CallContext, list[dict], int], "str | tuple[str, str]"]
 
@@ -19,7 +20,12 @@ class Call:
 
     @property
     def prompt_text(self) -> str:
-        return "\n".join(m["content"] for m in self.messages)
+        return text_of(self.messages)
+
+    @property
+    def tail(self) -> str:
+        """The volatile last message (ledger state + mode line)."""
+        return text_of(self.messages[-1:])
 
 
 class FakeLLM:
@@ -36,7 +42,7 @@ class FakeLLM:
         text, finish = out if isinstance(out, tuple) else (out, "stop")
         c = Completion(
             text=text,
-            prompt_tokens=sum(len(m["content"].split()) for m in messages),
+            prompt_tokens=len(text_of(messages).split()),
             completion_tokens=len(text.split()),
             reasoning_tokens=0,
             finish_reason=finish,

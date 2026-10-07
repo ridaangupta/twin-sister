@@ -64,7 +64,7 @@ async def test_hard_cap_and_soft_limit_reach_llm():
     await runner(llm, soft_limit=150, k=1.5).run(PROBLEM)
     core = [c for c in llm.calls if c.ctx.space == "core"]
     assert all(c.max_tokens == 225 for c in core)
-    assert all("about 150 tokens" in c.messages[1]["content"] for c in core)
+    assert all("about 150 tokens" in c.tail for c in core)
 
 
 async def test_scratchpad_skipped_when_budget_zero_and_used_otherwise():
@@ -106,8 +106,8 @@ async def test_ledger_flows_through_dialogue():
     ]))
     r = await runner(llm).run(PROBLEM)
     assert (r.ledger_total, r.ledger_agreed) == (1, 1)
-    turn2_prompt = [c for c in llm.calls if c.ctx.turn == 2][0].messages[1]["content"]
-    assert "F1 (agreed by B; proposed by A): one box holds 12 eggs" in turn2_prompt
+    turn2_tail = [c for c in llm.calls if c.ctx.turn == 2][0].tail
+    assert "F1 (agreed by B; proposed by A): one box holds 12 eggs" in turn2_tail
 
 
 async def test_wrong_answer_is_scored_incorrect():
@@ -143,3 +143,35 @@ def test_speaker_order():
     assert speaker_order(("A", "B"), "p7", 0) == speaker_order(("A", "B"), "p7", 0)
     with pytest.raises(ValueError):
         speaker_order(("A", "B"), "p", 0, "C")
+
+
+async def test_independent_openings_do_not_see_each_other():
+    llm = FakeLLM(scripted([
+        "OPEN-A\n" + trailer("36", "unsure", "no"),
+        "OPEN-B\n" + trailer("40", "unsure", "no"),
+        trailer("36", "agree", "yes"),
+        trailer("36", "agree", "yes"),
+    ]))
+    c = {**cfg(scratch_budget=30), "independent_openings": True}
+    r = await DialogueRunner.from_config(c, llm).run(PROBLEM)
+
+    opening_calls = [x for x in llm.calls if x.ctx.turn in (0, 1)]
+    assert {(x.ctx.agent, x.ctx.space) for x in opening_calls} == {("A", "scratchpad"), ("A", "core"), ("B", "scratchpad"), ("B", "core")}
+    assert all("OPEN-A" not in x.prompt_text and "OPEN-B" not in x.prompt_text for x in opening_calls)
+    assert all("opening post" in x.tail or "opening post" in x.tail.lower() for x in opening_calls)
+    later = [x for x in llm.calls if x.ctx.turn == 2 and x.ctx.space == "core"][0]
+    assert "OPEN-A" in later.prompt_text and "OPEN-B" in later.prompt_text
+    assert r.answer_trajectory[:2] == [{"A": "36", "B": None}, {"A": "36", "B": "40"}]
+    assert (r.stop_reason, r.turns) == ("consensus", 4)
+
+
+async def test_stops_when_both_agree_no_answer_and_writer_still_answers():
+    llm = FakeLLM(scripted([trailer("none", "unsure", "yes"), trailer("none", "agree", "yes")]))
+    r = await runner(llm).run(PROBLEM)
+    assert (r.stop_reason, r.turns, r.final.answer) == ("consensus_no_answer", 2, "36")
+
+
+async def test_prompt_cache_tokens_are_totalled(tmp_path):
+    llm = FakeLLM(scripted([trailer(consensus="yes")] * 2))
+    r = await runner(llm).run(PROBLEM)
+    assert {"prompt_cache_read", "prompt_cache_write"} <= r.tokens.keys()
