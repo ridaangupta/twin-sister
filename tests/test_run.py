@@ -104,7 +104,7 @@ def test_shipped_configs_parse_and_load(monkeypatch):
         cfg, _ = runner.load_config(path)
         if cfg["dataset"]["name"] == "jsonl":
             probs = datasets.load(cfg["dataset"])
-            assert len(probs) == cfg["dataset"]["limit"] and all(p.gold.isdigit() for p in probs)
+            assert len(probs) == cfg["dataset"].get("limit", 200) and all(p.gold.isdigit() for p in probs)
 
 
 def test_dev_subset_file_is_fixed():

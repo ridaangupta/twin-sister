@@ -1,0 +1,44 @@
+200 problems shared by all runs; reference = syn_dev200_dialogue
+
+method                          all  10 steps  16 steps  gen tok  $/problem
+syn_dev200_dialogue           0.915     0.980     0.850     1881    0.00418
+direct                        0.080     0.080     0.080        7    0.00011
+cot                           0.740     0.870     0.610      398    0.00059
+self_consistency              0.850     0.960     0.740     1974    0.00291
+syn_dev200_abl_no_indep       0.855     0.950     0.760     1376    0.00262
+syn_dev200_abl_simplicity     0.900     0.960     0.840     1729    0.00387
+
+paired vs syn_dev200_dialogue:
+  syn_dev200_dialogue - direct                     [all] diff +0.835 CI95 [+0.780, +0.885]  ref-only 167  other-only   0  McNemar p=0.0000
+  syn_dev200_dialogue - direct                     [ 10] diff +0.900 CI95 [+0.840, +0.950]  ref-only  90  other-only   0  McNemar p=0.0000
+  syn_dev200_dialogue - direct                     [ 16] diff +0.770 CI95 [+0.690, +0.850]  ref-only  77  other-only   0  McNemar p=0.0000
+  syn_dev200_dialogue - cot                        [all] diff +0.175 CI95 [+0.110, +0.240]  ref-only  42  other-only   7  McNemar p=0.0000
+  syn_dev200_dialogue - cot                        [ 10] diff +0.110 CI95 [+0.050, +0.170]  ref-only  11  other-only   0  McNemar p=0.0010
+  syn_dev200_dialogue - cot                        [ 16] diff +0.240 CI95 [+0.130, +0.350]  ref-only  31  other-only   7  McNemar p=0.0001
+  syn_dev200_dialogue - self_consistency           [all] diff +0.065 CI95 [+0.005, +0.120]  ref-only  24  other-only  11  McNemar p=0.0410
+  syn_dev200_dialogue - self_consistency           [ 10] diff +0.020 CI95 [-0.030, +0.070]  ref-only   4  other-only   2  McNemar p=0.6875
+  syn_dev200_dialogue - self_consistency           [ 16] diff +0.110 CI95 [+0.010, +0.210]  ref-only  20  other-only   9  McNemar p=0.0614
+  syn_dev200_dialogue - syn_dev200_abl_no_indep    [all] diff +0.060 CI95 [+0.005, +0.115]  ref-only  22  other-only  10  McNemar p=0.0501
+  syn_dev200_dialogue - syn_dev200_abl_no_indep    [ 10] diff +0.030 CI95 [-0.010, +0.070]  ref-only   4  other-only   1  McNemar p=0.3750
+  syn_dev200_dialogue - syn_dev200_abl_no_indep    [ 16] diff +0.090 CI95 [-0.010, +0.190]  ref-only  18  other-only   9  McNemar p=0.1221
+  syn_dev200_dialogue - syn_dev200_abl_simplicity  [all] diff +0.015 CI95 [-0.025, +0.055]  ref-only  10  other-only   7  McNemar p=0.6291
+  syn_dev200_dialogue - syn_dev200_abl_simplicity  [ 10] diff +0.020 CI95 [+0.000, +0.050]  ref-only   2  other-only   0  McNemar p=0.5000
+  syn_dev200_dialogue - syn_dev200_abl_simplicity  [ 16] diff +0.010 CI95 [-0.070, +0.090]  ref-only   8  other-only   7  McNemar p=1.0000
+
+syn_dev200_dialogue: outcome by opening posts (after turn 1)
+  both     opening(s) right: 124 problems, final correct 123 (99%)
+  one      opening(s) right:  53 problems, final correct  50 (94%)
+  neither  opening(s) right:  23 problems, final correct  10 (43%)
+  stop reasons {'consensus': 195, 'consensus_no_answer': 3, 'max_turns': 2}; mean turns 4.19
+
+syn_dev200_abl_no_indep: outcome by opening posts (after turn 1)
+  both     opening(s) right: 144 problems, final correct 144 (100%)
+  one      opening(s) right:  20 problems, final correct  19 (95%)
+  neither  opening(s) right:  36 problems, final correct   8 (22%)
+  stop reasons {'consensus': 191, 'consensus_no_answer': 4, 'max_turns': 5}; mean turns 3.13
+
+syn_dev200_abl_simplicity: outcome by opening posts (after turn 1)
+  both     opening(s) right: 126 problems, final correct 126 (100%)
+  one      opening(s) right:  49 problems, final correct  45 (92%)
+  neither  opening(s) right:  25 problems, final correct   9 (36%)
+  stop reasons {'consensus': 195, 'consensus_no_answer': 4, 'max_turns': 1}; mean turns 4.14

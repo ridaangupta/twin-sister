@@ -1,0 +1,25 @@
+# Single-agent baselines on the full 200-problem dev set.
+# Budget comes from a dialogue run:  --match runs/<dialogue_run_id>
+name: syn_dev200_baselines
+method: baselines
+model: ${MODEL}
+seed: 0
+temperature: null
+reasoning_effort: none
+concurrency: 16
+cache: true
+prompt_cache: explicit
+pricing: {input_per_mtok: 0.20, output_per_mtok: 1.20, cache_read_per_mtok: 0.02, cache_write_per_mtok: 0.25}   # gpt-5.6-luna, USD/Mtok
+
+dataset:
+  name: jsonl
+  path: evals/subsets/synthetic_dev200.jsonl
+
+baselines:
+  methods: [direct, cot, self_consistency]   # SC is sized from the cot run's measured tokens
+  direct_max_tokens: 32
+  sc_min_samples: 3
+  sc_temperature: 0.7
+  # budget: 1500          # use instead of --match to fix the budget by hand
+  # cot_tokens_ref: 250   # fix SC sizing instead of measuring it from cot
+  # sc_samples: 5         # or fix SC sample count outright
