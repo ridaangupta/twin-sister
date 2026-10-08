@@ -80,4 +80,6 @@ def load(cfg: Mapping[str, Any]) -> list[Problem]:
 
 def is_full_split(cfg: Mapping[str, Any]) -> bool:
     """True only for a public benchmark's whole split; generated and frozen sets are always allowed."""
-    return cfg["name"] not in ("jsonl", "synthetic") and not cfg.get("subset") and not cfg.get("limit")
+    if cfg["name"] in ("jsonl", "synthetic") or cfg.get("subset") or cfg.get("limit") or cfg.get("sample"):
+        return False
+    return not (cfg["name"].startswith("gsm_symbolic_") and cfg.get("split") == "dev")  # template-level dev split

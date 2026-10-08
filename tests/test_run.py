@@ -112,3 +112,11 @@ def test_dev_subset_file_is_fixed():
     sub = json.loads((runner.ROOT / "evals/subsets/gsm8k_dev200.json").read_text())
     assert sub["n"] == 200 and len(sub["ids"]) == 200 and len(set(sub["ids"])) == 200
     assert sub["ids"][:3] == ["gsm8k-test-788", "gsm8k-test-861", "gsm8k-test-82"]
+
+
+def test_full_split_guard():
+    assert datasets.is_full_split({"name": "gsm8k", "split": "test"})
+    assert not datasets.is_full_split({"name": "gsm8k", "split": "test", "limit": 5})
+    assert not datasets.is_full_split({"name": "gsm_symbolic_p2", "split": "dev"})
+    assert not datasets.is_full_split({"name": "gsm_symbolic_p2", "split": "test", "sample": 200})
+    assert datasets.is_full_split({"name": "gsm_symbolic_p2", "split": "test"})

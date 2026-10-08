@@ -705,3 +705,23 @@ here is `syn_dev200_dialogue`: 0.915 accuracy at $0.00418 per problem.
   Self-consistency is matched exactly by mixing 7 and 8 samples (8 on 12.3% of problems).
 - `synthetic_test1200` has **not** been used. The confirmatory run is on hold pending a decision on
   the research question (see PLAN_v2 decision point).
+
+---
+
+## 17. Addendum (2026-10-08): GSM-Symbolic P2 headroom check (WS6b, exploratory)
+
+200 seeded instances from the 25 dev templates (`configs/calib/p2dev_headroom_*`):
+
+| Method | Accuracy |
+|---|---|
+| Chain of thought (effort none) | 0.915 |
+| Reasoning on (effort low) | 0.970 |
+| Dialogue (frozen) | 0.970 |
+
+Single-agent accuracy is above 90%, so per PLAN_v2 P2 leaves little headroom. It becomes a "no harm on
+easier data" check rather than a test for gains.
+
+**Friction:**
+- The runner's full-split guard refused the sampled dev set until `sample` and the template-level dev split
+  were recognised.
+- The reasoning-on config needed an explicit `budget`.

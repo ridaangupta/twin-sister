@@ -18,6 +18,7 @@ dataset:
 
 baselines:
   methods: [reasoning]
+  budget: 1881
   reasoning_effort: low
   reasoning_prompt: baseline_cot_free
   reasoning_max_tokens: 32000
