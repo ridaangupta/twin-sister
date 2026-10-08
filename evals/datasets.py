@@ -28,6 +28,10 @@ def load_split(name: str, split: str) -> list[Problem]:
         from evals.gsm8k import load_gsm8k
 
         return load_gsm8k(split)
+    if name.startswith("gsm_symbolic_"):  # gsm_symbolic_p2 with split dev | test (template-level)
+        from evals.gsm_symbolic import load_split as load_sym
+
+        return load_sym(name.removeprefix("gsm_symbolic_"), split)
     raise ValueError(f"unknown dataset {name!r}")
 
 
@@ -67,6 +71,8 @@ def load(cfg: Mapping[str, Any]) -> list[Problem]:
         if missing:
             raise ValueError(f"subset {subset} has ids not in the split: {missing[:5]}")
         problems = [by_id[i] for i in ids]
+    if sample := cfg.get("sample"):  # seeded random subset (e.g. spread across GSM-Symbolic templates)
+        problems = random.Random(cfg.get("sample_seed", 0)).sample(problems, sample)
     if limit := cfg.get("limit"):
         problems = problems[:limit]
     return problems

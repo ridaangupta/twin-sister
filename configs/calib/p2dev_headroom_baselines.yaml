@@ -1,0 +1,21 @@
+# WS6b headroom check on GSM-Symbolic P2 dev templates (200 sampled instances). Exploratory.
+name: p2dev_headroom_baselines
+method: baselines
+model: ${MODEL}
+seed: 0
+temperature: null
+reasoning_effort: none
+concurrency: 16
+cache: true
+prompt_cache: explicit
+pricing: {input_per_mtok: 0.20, output_per_mtok: 1.20, cache_read_per_mtok: 0.02, cache_write_per_mtok: 0.25}   # gpt-5.6-luna, USD/Mtok
+
+dataset:
+  name: gsm_symbolic_p2
+  split: dev
+  sample: 200
+  sample_seed: 0
+
+baselines:
+  methods: [cot]
+  budget: 1881

@@ -1,0 +1,36 @@
+# WS6b headroom check: frozen dialogue on 200 sampled GSM-Symbolic P2 dev instances. Exploratory.
+name: p2dev_headroom_dialogue
+method: dialogue
+model: ${MODEL}
+seed: 0
+temperature: null         # reasoning models reject temperature
+reasoning_effort: none     # all reasoning visible in text; see analysis/calibration
+concurrency: 16
+cache: true
+prompt_cache: explicit    # cache breakpoints on the append-only prefix (GPT-5.6+)
+pricing: {input_per_mtok: 0.20, output_per_mtok: 1.20, cache_read_per_mtok: 0.02, cache_write_per_mtok: 0.25}   # gpt-5.6-luna, USD/Mtok
+
+dataset:
+  name: gsm_symbolic_p2
+  split: dev
+  sample: 200
+  sample_seed: 0
+
+agents:
+  A: {objective: accuracy}
+  B: {objective: skepticism}
+first_speaker: seeded     # seeded | A | B
+independent_openings: true   # round one in parallel: neither opening post sees the other
+
+controller:
+  type: heuristic
+  max_turns: 8            # posts, not exchanges
+  soft_limit: 300
+  soft_limit_choices: [150, 300, 600]   # sampled per (problem, turn) so Phase 2 has variation
+  scratch_budget: 200     # 0 disables private work
+  k: 2.0                  # hard cap = soft_limit * k
+
+synthesis:
+  type: single_writer
+  writer: A
+  max_tokens: 512
