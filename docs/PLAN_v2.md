@@ -228,7 +228,7 @@ the same set. One pre-registration covers all three, Holm across them.
 | Ablation | Change | Matching | Claim and test |
 |---|---|---|---|
 | 5a Sequential openings, budget-matched | `independent_openings: false`; raise `max_turns` / soft limits until the dev cost is within ±2% of the dialogue's | ±2% cost | Independent openings beat sequential (McNemar). Also report the openings' disagreement rate and the both-wrong rate. |
-| 5b Objective swap | B: simplicity instead of skepticism | Same config | **Equivalence**: two one-sided tests with a ±3-point margin, 90% power. That needs about 810–1,140 problems at the observed 8.5–12% discordance, so 1,200 is enough. Supported: "no difference larger than 3 points"; otherwise report the CI. |
+| 5b Objective swap | B: simplicity instead of skepticism | Same config | **Equivalence**: two one-sided tests with a ±3-point margin. At the observed 8.5–12% discordance that needs about 810–1,140 problems for 80% power, or 1,020–1,440 for 90% (`scripts/power.py --tost`). 1,200 gives at least 80% power across that range, and 90% at the dev rate. Supported: "no difference larger than 3 points"; otherwise report the CI. |
 | 5c Private scratchpads off | `scratch_budget: 0`, with the turn budget raised to match cost | ±2% cost | Scratchpads help or don't (two-sided McNemar) |
 | 5d (from WS1, if confirmed) Disagreement mechanism | No new run: pre-register "recovery when openings give different wrong answers > recovery when they give the same wrong answer" on the 5a–5c logs plus the dialogue run | – | Fisher exact |
 

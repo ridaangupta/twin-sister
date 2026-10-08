@@ -245,10 +245,13 @@ class LLM:
         *,
         max_tokens: int,
         temperature: float | None = 0.0,
+        reasoning_effort: str | None = None,
     ) -> Completion:
+        """`reasoning_effort` overrides the instance default for this call (e.g. per-problem mixtures)."""
+        effort = reasoning_effort if reasoning_effort is not None else self.reasoning_effort
         params = {"max_tokens": max_tokens, "temperature": temperature, "seed": self.seed, "sample_idx": ctx.sample_idx}
-        if self.reasoning_effort is not None:  # only keyed when set, so existing cache entries stay valid
-            params["reasoning_effort"] = self.reasoning_effort
+        if effort is not None:  # only keyed when set, so existing cache entries stay valid
+            params["reasoning_effort"] = effort
         key = cache_key(self.model, messages, params)
         p_hash = prompt_hash(messages)
 
@@ -256,7 +259,7 @@ class LLM:
         if hit is not None:
             completion = Completion(**{**hit, "latency_s": 0.0, "cached": True})
         else:
-            completion = await self._call_api(ctx, messages, max_tokens, temperature)
+            completion = await self._call_api(ctx, messages, max_tokens, temperature, effort)
             if self.cache:
                 self.cache.put(key, {k: v for k, v in asdict(completion).items() if k not in ("latency_s", "cached")})
 
@@ -271,7 +274,7 @@ class LLM:
                     "max_tokens": max_tokens,
                     "temperature": temperature,
                     "seed": self.seed,
-                    "reasoning_effort": self.reasoning_effort,
+                    "reasoning_effort": effort,
                     "response": completion.text,
                     "prompt_tokens": completion.prompt_tokens,
                     "completion_tokens": completion.completion_tokens,
@@ -286,7 +289,8 @@ class LLM:
             )
         return completion
 
-    async def _call_api(self, ctx: CallContext, messages: Messages, max_tokens: int, temperature: float | None) -> Completion:
+    async def _call_api(self, ctx: CallContext, messages: Messages, max_tokens: int, temperature: float | None,
+                        effort: str | None = None) -> Completion:
         kwargs: dict[str, Any] = {"model": self.model, "messages": self._wire(messages), "max_completion_tokens": max_tokens}
         if self.prompt_cache:
             kwargs["extra_body"] = {"prompt_cache_options": {"mode": self.prompt_cache}}
@@ -294,8 +298,8 @@ class LLM:
             kwargs["temperature"] = temperature
         if self.seed is not None:
             kwargs["seed"] = self.seed
-        if self.reasoning_effort is not None:
-            kwargs["reasoning_effort"] = self.reasoning_effort
+        if effort is not None:
+            kwargs["reasoning_effort"] = effort
         client = self._client(ctx.agent)
 
         async with self._sem:

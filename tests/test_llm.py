@@ -279,3 +279,15 @@ async def test_retries_sporadic_invalid_prompt_flag():
     client = FakeClient(flagged, _response("ok"))
     r = await LLM("m", clients={"A": client}, retry_wait=wait_none()).complete(ctx(), MSGS, max_tokens=8)
     assert r.text == "ok" and len(client.calls) == 2
+
+
+async def test_per_call_reasoning_effort_overrides_default(tmp_path, cache):
+    client = FakeClient()
+    with Tracer(tmp_path / "run", "r") as tracer:
+        llm = LLM("m", tracer=tracer, cache=cache, reasoning_effort="none", clients={"A": client})
+        await llm.complete(ctx(), MSGS, max_tokens=16)
+        await llm.complete(ctx(), MSGS, max_tokens=16, reasoning_effort="medium")  # different effort: cache miss
+        await llm.complete(ctx(), MSGS, max_tokens=16, reasoning_effort="medium")  # same: cache hit
+    assert [c["reasoning_effort"] for c in client.calls] == ["none", "medium"]
+    rows = [json.loads(l) for l in (tmp_path / "run" / "calls.jsonl").read_text().splitlines()]
+    assert [(r["reasoning_effort"], r["cached"]) for r in rows] == [("none", False), ("medium", False), ("medium", True)]
