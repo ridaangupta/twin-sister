@@ -353,7 +353,7 @@ brings the total to about $100.
 - **Cost matching on dev may not carry over to test** (the per-problem cost mix shifts). Handled by
   the drift rule: report it, and flag it if over ±5%.
 - **The error classifier may be too coarse.** Validated against 60 hand labels, with an LLM fallback.
-- **GSM-Symbolic P2 may be at ceiling for `gpt-5.4-luna`-class models.** Pre-registered fallback
+- **GSM-Symbolic P2 may be at ceiling for `gpt-5.6-luna`-class models.** Pre-registered fallback
   framing.
 - **API changes** (pricing, caching, `invalid_prompt` behaviour) would affect cost matching. Record
   pricing in every run config, as now.
