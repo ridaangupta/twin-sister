@@ -6,6 +6,7 @@ import hashlib
 from typing import Any, Mapping, Sequence
 
 from dialogic.controller.base import ControllerState, TurnController, TurnDecision
+from evals.mixture import Mixture
 
 
 def _pick(choices: Sequence[int], seed: int, problem_id: str, turn: int) -> int:
@@ -24,9 +25,10 @@ class HeuristicController(TurnController):
         scratch_budget: int = 0,
         soft_limit_choices: Sequence[int] | None = None,
         seed: int = 0,
-        min_turns: int = 0,
+        min_turns: int | Mixture = 0,
     ):
-        self.min_turns = min_turns  # no consensus stop before this many posts (self-refine: at least one critique)
+        # No consensus stop before this many posts (self-refine: at least one critique). A Mixture picks per problem.
+        self.min_turns = min_turns
         if max_turns < 1:
             raise ValueError("max_turns must be >= 1")
         self.max_turns = max_turns
@@ -43,13 +45,13 @@ class HeuristicController(TurnController):
             scratch_budget=cfg.get("scratch_budget", 0),
             soft_limit_choices=cfg.get("soft_limit_choices"),
             seed=seed,
-            min_turns=cfg.get("min_turns", 0),
+            min_turns=Mixture.from_config(cfg["min_turns"], "min_turns") if isinstance(cfg.get("min_turns"), dict) else cfg.get("min_turns", 0),
         )
 
     def decide(self, state: ControllerState) -> TurnDecision:
         if state.turn >= self.max_turns:
             stop, reason = True, "max_turns"
-        elif state.turn < self.min_turns:
+        elif state.turn < (self.min_turns.pick(state.problem_id) if isinstance(self.min_turns, Mixture) else self.min_turns):
             stop, reason = False, "continue"
         elif state.mutual_consensus:
             stop, reason = True, "consensus"

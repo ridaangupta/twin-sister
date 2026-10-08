@@ -115,7 +115,7 @@ async def test_reasoning_baseline_effort_and_tokens():
     class Spy(FakeLLM):
         async def complete(self, ctx, messages, *, max_tokens, temperature=0.0, reasoning_effort=None):
             seen.append((reasoning_effort, temperature, max_tokens))
-            return await super().complete(ctx, messages, max_tokens=max_tokens, temperature=temperature)
+            return await super().complete(ctx, messages, max_tokens=max_tokens, temperature=temperature, reasoning_effort=reasoning_effort)
 
     llm = Spy(lambda ctx, msgs, mt: "step by step\nANSWER: 18")
     probs = [Problem(f"p{i}", "q", "18") for i in range(100)]
@@ -141,3 +141,11 @@ async def test_k_plus_judge_sees_all_attempts_and_skips_when_unanimous():
     n_before = len(llm.calls)
     r2 = await b.k_plus_judge(Problem("agree", "q", "18"), k=3, sample_budget=300, judge_budget=900)
     assert r2.judged is False and len(llm.calls) == n_before + 3
+
+
+async def test_reasoning_votes_over_samples_with_distinct_cache_slots():
+    replies = {0: "ANSWER: 17", 1: "ANSWER: 18", 2: "ANSWER: 18"}
+    llm = FakeLLM(lambda ctx, msgs, mt: replies[ctx.sample_idx])
+    r = await Baselines(llm).reasoning(P, effort="medium", max_tokens=32000, samples=3)
+    assert r.final_answer == "18" and r.n_samples == 3 and r.setting == "medium n=3"
+    assert sorted(c.ctx.sample_idx for c in llm.calls) == [0, 1, 2]

@@ -36,7 +36,7 @@ class FakeLLM:
         self.calls: list[Call] = []
         self.usage = UsageTracker()
 
-    async def complete(self, ctx, messages, *, max_tokens, temperature=0.0) -> Completion:
+    async def complete(self, ctx, messages, *, max_tokens, temperature=0.0, reasoning_effort=None) -> Completion:
         self.calls.append(Call(ctx, messages, max_tokens, temperature))
         out = self.script(ctx, messages, max_tokens)
         text, finish = out if isinstance(out, tuple) else (out, "stop")

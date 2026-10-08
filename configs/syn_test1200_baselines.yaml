@@ -1,0 +1,30 @@
+# CONFIRMATORY visible-reasoning baselines (see analysis/preregistration_test1200.md), each cost-matched on dev
+# to the frozen dialogue. Run WITHOUT --match: the budget is fixed below.
+name: syn_test1200_baselines
+final_run: true
+method: baselines
+model: ${MODEL}
+seed: 0
+temperature: null
+reasoning_effort: none
+concurrency: 16
+cache: true
+prompt_cache: explicit
+pricing: {input_per_mtok: 0.20, output_per_mtok: 1.20, cache_read_per_mtok: 0.02, cache_write_per_mtok: 0.25}   # gpt-5.6-luna, USD/Mtok
+
+dataset:
+  name: jsonl
+  path: evals/subsets/synthetic_test1200.jsonl
+
+baselines:
+  methods: [direct, cot, self_consistency, k_plus_judge, reasoning]
+  budget: 1881            # fixed: the dev dialogue's mean generated tokens (CoT budget, sample and judge caps)
+  direct_max_tokens: 32
+  sc_temperature: 0.7
+  # Cost-matched on dev to the dialogue's $0.00418/problem (analysis/results/cost_matching.md):
+  sc_samples: {low: 7, high: 8, p_high: 0.123}
+  judge_k: {low: 6, high: 7, p_high: 0.060}
+  reasoning_effort: medium
+  reasoning_samples: {low: 3, high: 4, p_high: 0.478}
+  reasoning_prompt: baseline_cot_free
+  reasoning_max_tokens: 32000

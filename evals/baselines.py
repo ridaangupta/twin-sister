@@ -93,15 +93,23 @@ class Baselines:
             n, answers, sum(c.truncated for c in cs), setting=f"n={n}" if mixed else None,
         )
 
-    async def reasoning(self, p: Problem, effort: str | Mixture, max_tokens: int, prompt: str = "baseline_cot_free") -> BaselineResult:
-        """One call with hidden reasoning on (WS3b). `effort` may be a per-problem mixture of two levels."""
+    async def reasoning(self, p: Problem, effort: str | Mixture, max_tokens: int, prompt: str = "baseline_cot_free",
+                        samples: int | Mixture = 1) -> BaselineResult:
+        """Hidden reasoning on (WS3b): one call, or a majority vote over `samples` calls. Either knob may be a
+        per-problem mixture. Draw i is cached under sample_idx i, so n = 1..N reuse the same draws."""
         level = effort.pick(p.id) if isinstance(effort, Mixture) else effort
+        n = samples.pick(p.id) if isinstance(samples, Mixture) else samples
         msgs = self._msgs(prompt, task=p.question, budget=max_tokens)
-        c = await self.llm.complete(self._ctx("reasoning", p), msgs, max_tokens=max_tokens, temperature=None, reasoning_effort=level)
-        ans = extract_answer(c.text)
-        return BaselineResult("reasoning", p.id, p.gold, ans, c.text, ans == p.gold,
-                              {"generated": c.completion_tokens, "prompt": c.prompt_tokens, "reasoning": c.reasoning_tokens},
-                              1, [ans], int(c.truncated), setting=level)
+        cs = await asyncio.gather(*(
+            self.llm.complete(self._ctx("reasoning", p, i), msgs, max_tokens=max_tokens, temperature=None, reasoning_effort=level)
+            for i in range(n)
+        ))
+        answers = [extract_answer(c.text) for c in cs]
+        ans = majority_vote(answers) if n > 1 else answers[0]
+        return BaselineResult("reasoning", p.id, p.gold, ans, cs[0].text, ans == p.gold,
+                              {"generated": sum(c.completion_tokens for c in cs), "prompt": sum(c.prompt_tokens for c in cs),
+                               "reasoning": sum(c.reasoning_tokens for c in cs)},
+                              n, answers, sum(c.truncated for c in cs), setting=f"{level} n={n}" if n > 1 or isinstance(samples, Mixture) else level)
 
     async def k_plus_judge(self, p: Problem, k: int | Mixture, sample_budget: int, judge_budget: int, temperature: float = 0.7) -> BaselineResult:
         """k independent CoT attempts (SC's first k draws) + one judge seeing all k when any disagree (WS3c)."""
@@ -201,8 +209,11 @@ async def run_baselines(
             effort = bcfg.get("reasoning_effort", "medium")
             effort = Mixture.from_config(effort, "reasoning_effort") if isinstance(effort, dict) else effort
             info["reasoning"] = {"effort": bcfg.get("reasoning_effort", "medium"), "prompt": bcfg.get("reasoning_prompt", "baseline_cot_free")}
+            samples = bcfg.get("reasoning_samples", 1)
+            samples = Mixture.from_config(samples, "reasoning_samples") if isinstance(samples, dict) else samples
+            info["reasoning"]["samples"] = bcfg.get("reasoning_samples", 1)
             results[m] = await b.run("reasoning", problems, effort=effort, max_tokens=bcfg.get("reasoning_max_tokens", 32000),
-                                     prompt=bcfg.get("reasoning_prompt", "baseline_cot_free"))
+                                     prompt=bcfg.get("reasoning_prompt", "baseline_cot_free"), samples=samples)
         elif m == "k_plus_judge":
             k = bcfg.get("judge_k", 4)
             k = Mixture.from_config(k, "judge_k") if isinstance(k, dict) else k

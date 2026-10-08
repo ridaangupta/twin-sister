@@ -80,7 +80,10 @@ def main() -> None:
             elif m == "k_plus_judge":
                 families[m].append((f"k={bcfg.get('judge_k')}", *per_problem(mine, pricing)))
             elif m == "reasoning":
-                families[m].append((f"effort={bcfg.get('reasoning_effort')}", *per_problem(mine, pricing)))
+                n_max = 1 + max(c["sample_idx"] for c in mine)
+                for n in range(1, n_max + 1):  # a vote over the first n reasoning calls
+                    label = f"effort={bcfg.get('reasoning_effort')}" + (f" n={n}" if n_max > 1 else "")
+                    families[m].append((label, *per_problem(mine, pricing, lambda c, n=n: c["sample_idx"] < n)))
             else:
                 families[m].append((cfg["name"], *per_problem(mine, pricing)))
 

@@ -79,3 +79,18 @@ async def test_ledger_has_no_confirmations_with_one_agent():
     llm = FakeLLM(script([trailer(consensus="no", extra="FACT+: 12 per box"), trailer(consensus="yes", extra="FACT_OK: F1")]))
     r = await SelfRefineRunner.from_config(cfg(), llm).run(PROBLEM)
     assert r.ledger_agreed == 0
+
+
+async def test_min_turns_mixture_forces_more_critique_rounds():
+    replies = [trailer(consensus="yes")] * 8
+    probs = [Problem(f"p{i}", "q", "36") for i in range(60)]
+    c = {**cfg(), "self_refine": {"min_turns": {"low": 2, "high": 4, "p_high": 0.5}}}
+    rs = await SelfRefineRunner.from_config(c, FakeLLM(script(replies))).run_all(probs)
+    turns = [r.turns for r in rs]
+    assert set(turns) == {2, 4} and 15 < turns.count(4) < 45
+
+
+def test_min_turns_below_floor_rejected():
+    import pytest
+    with pytest.raises(ValueError):
+        SelfRefineRunner.from_config({**cfg(redraft=True), "self_refine": {"redraft": True, "min_turns": 2}}, FakeLLM(script([])))

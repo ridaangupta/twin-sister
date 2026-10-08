@@ -60,7 +60,16 @@ class SelfRefineRunner:
         sr = cfg.get("self_refine", {})
         t = cfg.get("temperature", 0.0)
         redraft = sr.get("redraft", False)
-        ctl = {**cfg["controller"], "min_turns": (2 if redraft else 1) + 1}  # stop no earlier than after the first critique
+        # Stop no earlier than after the first critique; `self_refine.min_turns` can require more (an int, or a
+        # {low, high, p_high} mixture used to match the dialogue's cost).
+        floor = (2 if redraft else 1) + 1
+        mt = sr.get("min_turns", floor)
+        if isinstance(mt, dict):
+            if min(mt["low"], mt["high"]) < floor:
+                raise ValueError(f"self_refine.min_turns must be >= {floor}")
+        elif mt < floor:
+            raise ValueError(f"self_refine.min_turns must be >= {floor}")
+        ctl = {**cfg["controller"], "min_turns": mt}
         return cls(
             role_agent(sr.get("draft_objective", "accuracy"), "turn_draft", llm, prompts, t),
             role_agent(sr.get("critique_objective", "skepticism"), "turn_critique", llm, prompts, t),
