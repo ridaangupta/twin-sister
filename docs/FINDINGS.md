@@ -640,3 +640,36 @@ p = 0.134.
 | Configs | `configs/syn_dev50_*`, `syn_dev200_*`, `syn_test400_*`, `gsm8k_dev50_*` |
 | Full traces (gitignored) | `runs/<timestamp>_<config>/`; key runs: `20261007T153222Z_syn_dev200_dialogue`, `…153643Z_syn_dev200_baselines`, `…154220Z_syn_dev200_abl_no_indep`, `…154644Z_syn_dev200_abl_simplicity`, `…155829Z_syn_dev200_baselines_extra`, `20261007T160631Z_syn_test400_dialogue`, `…161733Z_syn_test400_baselines` |
 | Prompts | `prompts/` (base_agent, instructions, turn_post, turn_private, final_writer, baseline_*, objectives/*) |
+
+---
+
+## 15. Addendum (2026-10-08): exploratory log analyses (PLAN_v2 WS1)
+
+Exploratory only: these runs were already used. Full tables: `analysis/results/exploratory_v1.md`
+(`scripts/explore_logs.py`); 60-case hand-labelling sample for the error classifier:
+`analysis/results/error_validation_sample.md` (not yet labelled).
+
+- **Recovery when both openings are wrong depends entirely on whether they disagree.**
+
+  | Run | Same wrong answer | Recovered | Different (or missing) wrong answers | Recovered |
+  |---|---|---|---|---|
+  | Test (dialogue) | 8 | 0 | 48 | 26 (54%) |
+  | Dev (dialogue) | 3 | 0 | 20 | 10 (50%) |
+  | Dev, sequential openings | 14 | 0 | 22 | 8 (36%) |
+  | Dev, simplicity partner | 3 | 0 | 22 | 9 (41%) |
+
+  Across all four runs, **0 of 28** shared wrong answers were recovered. The mechanism is
+  *disagreement triggers re-derivation*, not a skeptic finding errors both agents share.
+- **Sequential openings create shared errors.** Same-wrong openings went from 3 to 14 on dev,
+  B switched answers once instead of 16 times, and partners corrected almost nothing (e.g. 2 of 30
+  implicit-total errors).
+- **Switches nearly always move toward the correct answer:** 81 to 4 on test, 40 to 0 on dev,
+  with 15 and 5 wrong-to-wrong.
+- **Most common first error: implicit totals** (66 of 148 classified errors on test), which are also
+  the least often corrected (35 never corrected). Next: arithmetic or unexplained (44), wrong operand
+  (18), misread relation (15), backward step (4). "Misread given value" nearly vanished once the
+  extractor stopped attributing right-hand-side results to operands.
+- **Extractor friction:** the first version attributed `= 271 − 8 = 263` to every label on the
+  right-hand side, inflating "misread given value" to 155. Fixed by accepting only clause subjects
+  (no symbolic or word operator before the label) and requiring arithmetic-only final steps.
+  Edge cases are pinned in `tests/test_explore_logs.py`.
