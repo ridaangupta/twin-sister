@@ -1,0 +1,55 @@
+# Cost matching on the dev set (WS3)
+
+Target: `20261007T153222Z_syn_dev200_dialogue` — **$0.00418 per problem**, 1881 generated tokens. Tolerance ±2%.
+
+## self_refine_redraft
+
+| setting | $/problem | ratio to dialogue | generated tokens | of which hidden reasoning |
+|---|---|---|---|---|
+| calib_self_refine_redraft | 0.00355 | 0.849 | 1725 | 0 |
+
+**No bracket:** every setting is cheaper than the dialogue; nearest `calib_self_refine_redraft` at ratio 0.849. Measure another setting on the other side, or report the gap.
+
+## self_refine
+
+| setting | $/problem | ratio to dialogue | generated tokens | of which hidden reasoning |
+|---|---|---|---|---|
+| calib_self_refine | 0.00282 | 0.675 | 1275 | 0 |
+
+**No bracket:** every setting is cheaper than the dialogue; nearest `calib_self_refine` at ratio 0.675. Measure another setting on the other side, or report the gap.
+
+## reasoning
+
+| setting | $/problem | ratio to dialogue | generated tokens | of which hidden reasoning |
+|---|---|---|---|---|
+| effort=low | 0.00098 | 0.235 | 734 | 316 |
+| effort=medium | 0.00120 | 0.287 | 916 | 485 |
+| effort=high | 0.00174 | 0.415 | 1361 | 959 |
+
+**No bracket:** every setting is cheaper than the dialogue; nearest `effort=high` at ratio 0.415. Measure another setting on the other side, or report the gap.
+
+## k_plus_judge
+
+| setting | $/problem | ratio to dialogue | generated tokens | of which hidden reasoning |
+|---|---|---|---|---|
+| k=3 | 0.00214 | 0.512 | 1364 | 0 |
+| k=4 | 0.00280 | 0.669 | 1775 | 0 |
+| k=5 | 0.00348 | 0.831 | 2196 | 0 |
+
+**No bracket:** every setting is cheaper than the dialogue; nearest `k=5` at ratio 0.831. Measure another setting on the other side, or report the gap.
+
+## self_consistency
+
+| setting | $/problem | ratio to dialogue | generated tokens | of which hidden reasoning |
+|---|---|---|---|---|
+| n=1 | 0.00057 | 0.136 | 385 | 0 |
+| n=2 | 0.00115 | 0.275 | 778 | 0 |
+| n=3 | 0.00173 | 0.414 | 1170 | 0 |
+| n=4 | 0.00232 | 0.553 | 1565 | 0 |
+| n=5 | 0.00291 | 0.697 | 1974 | 0 |
+| n=6 | 0.00350 | 0.835 | 2367 | 0 |
+| n=7 | 0.00411 | 0.983 | 2789 | 0 |
+| n=8 | 0.00470 | 1.124 | 3190 | 0 |
+
+**Match:** mixture low = `n=7`, high = `n=8`, p_high = **0.123** → expected $0.00418 (ratio 1.000), 2839 generated tokens.
+

@@ -673,3 +673,35 @@ Exploratory only: these runs were already used. Full tables: `analysis/results/e
   right-hand side, inflating "misread given value" to 155. Fixed by accepting only clause subjects
   (no symbolic or word operator before the label) and requiring arithmetic-only final steps.
   Edge cases are pinned in `tests/test_explore_logs.py`.
+
+---
+
+## 16. Addendum (2026-10-08): stronger baselines on dev (PLAN_v2 WS3); the decision point
+
+Dev-200 calibration runs, `analysis/results/cost_matching.md` (`scripts/match_cost.py`). The dialogue
+here is `syn_dev200_dialogue`: 0.915 accuracy at $0.00418 per problem.
+
+| Baseline (dev, 200) | Accuracy | 10 / 16 steps | Cost ratio to dialogue | Generated tokens (hidden reasoning) |
+|---|---|---|---|---|
+| **Reasoning on, effort low** (single call) | **0.970** | 0.99 / 0.95 | **0.235** | 734 (316) |
+| Reasoning on, effort medium | 0.985 | 1.00 / 0.97 | 0.287 | 916 (485) |
+| Reasoning on, effort high | 0.990 | 1.00 / 0.98 | 0.415 | 1,361 (959) |
+| k attempts + judge, k = 4 | 0.895 | – | 0.669 | 1,775 |
+| k attempts + judge, k = 5 | 0.885 | – | 0.831 | 2,196 |
+| Self-consistency, 8 samples | 0.870 | – | 1.124 | 3,190 |
+| Self-refine, two independent drafts | 0.865 | – | 0.849 | 1,725 |
+| Self-refine | 0.835 | – | 0.675 | 1,275 |
+
+- **A single reasoning-on call beats the dialogue at about a quarter of its cost.**
+  - Problem by problem: at effort medium, 14 problems were right only with reasoning-on and 0 only
+    with the dialogue.
+  - On 16-step problems: 0.95–0.98 against the dialogue's 0.85.
+  - None of the reasoning runs truncated.
+- The test-400 result (dialogue beats cost-matched self-consistency by 10.2 points) still stands, but
+  **only within the reasoning-off regime**. It does not survive the baseline a practitioner would
+  actually use.
+- The other stronger baselines all cost less than the dialogue at every setting measured. Matching
+  them exactly needs higher settings: k = 6–7 for the judge, longer self-refine budgets.
+  Self-consistency is matched exactly by mixing 7 and 8 samples (8 on 12.3% of problems).
+- `synthetic_test1200` has **not** been used. The confirmatory run is on hold pending a decision on
+  the research question (see PLAN_v2 decision point).
