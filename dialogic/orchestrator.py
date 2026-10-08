@@ -54,6 +54,7 @@ class DialogueResult:
     ledger_disputes: int
     protocol_errors: int
     extra: dict[str, Any] = field(default_factory=dict)
+    method: str = METHOD
 
     def row(self) -> dict[str, Any]:
         r = asdict(self)
@@ -62,7 +63,7 @@ class DialogueResult:
         r["solution_steps"] = self.final.solution_steps
         r["solution_tokens_est"] = self.final.solution_tokens_est
         del r["final"]
-        return {"method": METHOD, **r}
+        return {"method": self.method, **r}
 
 
 

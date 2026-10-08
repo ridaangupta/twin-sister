@@ -96,3 +96,48 @@ async def test_run_baselines_fixed_sc_samples_and_judge():
     results, info = await run_baselines({"baselines": {"methods": ["self_consistency", "two_plus_judge"], "sc_samples": 7}}, [P], budget=900, llm=llm)
     assert results["self_consistency"][0].n_samples == 7 and info["self_consistency"]["n"] == 7
     assert results["two_plus_judge"][0].judged is False
+
+
+async def test_sc_mixture_picks_per_problem_and_reuses_draws():
+    from evals.mixture import Mixture
+    probs = [Problem(f"p{i}", "q", "18") for i in range(200)]
+    llm = FakeLLM(lambda ctx, msgs, mt: "ANSWER: 18")
+    rs = await Baselines(llm).run("self_consistency", probs, n=Mixture(7, 8, 0.25, "sc_samples"), sample_budget=300)
+    ns = [r.n_samples for r in rs]
+    assert set(ns) == {7, 8} and 0.15 < ns.count(8) / len(ns) < 0.35
+    assert all(r.setting == f"n={r.n_samples}" for r in rs)
+
+
+async def test_reasoning_baseline_effort_and_tokens():
+    from evals.mixture import Mixture
+    seen = []
+
+    class Spy(FakeLLM):
+        async def complete(self, ctx, messages, *, max_tokens, temperature=0.0, reasoning_effort=None):
+            seen.append((reasoning_effort, temperature, max_tokens))
+            return await super().complete(ctx, messages, max_tokens=max_tokens, temperature=temperature)
+
+    llm = Spy(lambda ctx, msgs, mt: "step by step\nANSWER: 18")
+    probs = [Problem(f"p{i}", "q", "18") for i in range(100)]
+    rs = await Baselines(llm).run("reasoning", probs, effort=Mixture("low", "medium", 0.5, "reasoning_effort"), max_tokens=32000)
+    assert {e for e, _, _ in seen} == {"low", "medium"} and all(t is None and m == 32000 for _, t, m in seen)
+    assert all(r.correct and r.setting in ("low", "medium") and "reasoning" in r.tokens for r in rs)
+    assert "Solve the problem step by step" in llm.calls[0].prompt_text and "WORKING" not in llm.calls[0].prompt_text
+
+
+async def test_k_plus_judge_sees_all_attempts_and_skips_when_unanimous():
+    def script(ctx, msgs, mt):
+        if ctx.sample_idx == 1000:
+            return "WORKING:\nx = 18\nANSWER: 18"
+        return f"attempt {ctx.sample_idx}\nANSWER: {18 if ctx.problem_id == 'agree' or ctx.sample_idx else 17}"
+
+    llm = FakeLLM(script)
+    b = Baselines(llm, temperature=None)
+    r = await b.k_plus_judge(Problem("split", "q", "18"), k=4, sample_budget=300, judge_budget=900)
+    judge = llm.calls[-1]
+    assert r.judged and r.correct and r.sample_answers == ["17", "18", "18", "18"]
+    assert all(f"ATTEMPT {i}:" in judge.prompt_text for i in (1, 2, 3, 4)) and "4 independent attempts" in judge.prompt_text
+    assert judge.max_tokens == 900
+    n_before = len(llm.calls)
+    r2 = await b.k_plus_judge(Problem("agree", "q", "18"), k=3, sample_budget=300, judge_budget=900)
+    assert r2.judged is False and len(llm.calls) == n_before + 3

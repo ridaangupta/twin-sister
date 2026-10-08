@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 
 from dialogic.llm import LLM
 from dialogic.orchestrator import DialogueRunner
+from dialogic.self_refine import SelfRefineRunner
 from dialogic.trace import Tracer, utc_now
 from evals import datasets
 from evals.baselines import run_baselines
@@ -63,8 +64,8 @@ def load_config(path: str | Path) -> tuple[dict[str, Any], str]:
     for key in ("name", "method", "model", "dataset"):
         if not cfg.get(key):
             raise SystemExit(f"config is missing {key!r}")
-    if cfg["method"] not in ("dialogue", "baselines"):
-        raise SystemExit("method must be 'dialogue' or 'baselines'")
+    if cfg["method"] not in ("dialogue", "baselines", "self_refine"):
+        raise SystemExit("method must be 'dialogue', 'baselines' or 'self_refine'")
     return cfg, raw
 
 
@@ -151,6 +152,9 @@ async def run(cfg: dict[str, Any], raw_cfg: str, match: str | None = None, *, ru
             llm = LLM.from_config(cfg, tracer, cache_path=Path(runs_dir) / ".cache.sqlite")
         if cfg["method"] == "dialogue":
             results = {"dialogue": [r.row() for r in await DialogueRunner.from_config(cfg, llm, tracer).run_all(problems)]}
+        elif cfg["method"] == "self_refine":
+            sr = SelfRefineRunner.from_config(cfg, llm, tracer)
+            results = {sr.method: [r.row() for r in await sr.run_all(problems)]}
         else:
             if match:
                 budget, match_info = matched_budget(match, [p.id for p in problems])

@@ -1,0 +1,21 @@
+# WS3 dev calibration (SC with 8 samples; k_plus_judge k=4). Run with --match runs/<syn_dev200_dialogue>.
+name: calib_sc8_judge4
+method: baselines
+model: ${MODEL}
+seed: 0
+temperature: null
+reasoning_effort: none
+concurrency: 16
+cache: true
+prompt_cache: explicit
+pricing: {input_per_mtok: 0.20, output_per_mtok: 1.20, cache_read_per_mtok: 0.02, cache_write_per_mtok: 0.25}   # gpt-5.6-luna, USD/Mtok
+
+dataset:
+  name: jsonl
+  path: evals/subsets/synthetic_dev200.jsonl
+
+baselines:
+  methods: [self_consistency, k_plus_judge]
+  sc_samples: 8
+  judge_k: 4
+  sc_temperature: 0.7

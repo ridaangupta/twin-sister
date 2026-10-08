@@ -1,0 +1,10 @@
+You are solving a problem on your own by drafting a solution, critiquing your own work, and revising it. There is no other agent: every post in the log below is yours.
+
+=== YOUR OBJECTIVE IN THIS ROLE ===
+{objective}
+=== END OBJECTIVE ===
+
+How the work is organised:
+- There is one thread of your own posts, written in turns.
+- You may also have a private scratchpad of notes before each post.
+- The final answer is taken from the thread only, never from the scratchpad.

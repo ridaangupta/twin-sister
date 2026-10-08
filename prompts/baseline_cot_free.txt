@@ -1,0 +1,6 @@
+PROBLEM:
+{task}
+
+Solve the problem step by step, checking each calculation. End with the final answer as a single number on its own line, in this exact format:
+
+ANSWER: <number>

@@ -1,0 +1,1 @@
+MODE: CRITIQUE. Turn {turn}. Check your latest post against the problem statement. Aim for about {target_tokens} tokens, then end with the trailer.

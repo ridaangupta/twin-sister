@@ -1,0 +1,31 @@
+# WS3a dev calibration: single-agent self-refine with two independent drafts; same controller as the dialogue.
+name: calib_self_refine_redraft
+method: self_refine
+model: ${MODEL}
+seed: 0
+temperature: null         # reasoning models reject temperature
+reasoning_effort: none     # all reasoning visible in text; see analysis/calibration
+concurrency: 16
+cache: true
+prompt_cache: explicit    # cache breakpoints on the append-only prefix (GPT-5.6+)
+pricing: {input_per_mtok: 0.20, output_per_mtok: 1.20, cache_read_per_mtok: 0.02, cache_write_per_mtok: 0.25}   # gpt-5.6-luna, USD/Mtok
+
+dataset:
+  name: jsonl
+  path: evals/subsets/synthetic_dev200.jsonl   # 100 x 10 steps + 100 x 16 steps, mixed
+
+
+controller:
+  type: heuristic
+  max_turns: 8            # posts, not exchanges
+  soft_limit: 300
+  soft_limit_choices: [150, 300, 600]   # sampled per (problem, turn) so Phase 2 has variation
+  scratch_budget: 200     # 0 disables private work
+  k: 2.0                  # hard cap = soft_limit * k
+
+
+self_refine:
+  label: self_refine_redraft
+  redraft: true
+  draft_objective: accuracy
+  critique_objective: skepticism

@@ -31,7 +31,15 @@ class Agent:
         prompts: PromptLibrary,
         *,
         temperature: float | None = 0.0,
+        system_template: str = "base_agent",
+        instructions_template: str = "instructions",
+        post_template: str = "turn_post",
+        private_template: str = "turn_private",
     ):
+        self.system_template = system_template
+        self.instructions_template = instructions_template
+        self.post_template = post_template
+        self.private_template = private_template
         self.id = agent_id
         self.other_id = other_id
         self.objective = objective
@@ -41,7 +49,7 @@ class Agent:
 
     def system_prompt(self) -> str:
         return self.prompts.render(
-            "base_agent",
+            self.system_template,
             agent_id=self.id,
             other_id=self.other_id,
             objective=self.prompts.objective(self.objective),
@@ -54,7 +62,7 @@ class Agent:
             {"role": "system", "content": self.system_prompt()},
             {
                 "role": "user",
-                "content": [problem_block(view.task), block(self.prompts.get("instructions"))]
+                "content": [problem_block(view.task), block(self.prompts.get(self.instructions_template))]
                 + log_blocks(view.thread, view.scratchpad, viewer=self.id),
             },
         ]
@@ -63,11 +71,11 @@ class Agent:
         return {"agreed_facts": render_facts(view.agreed_facts), "open_claims": render_facts(view.open_claims)}
 
     def scratch_messages(self, view: AgentView, budget: int, turn: int, opening: bool = False) -> list[dict[str, Any]]:
-        tail = self.prompts.render("turn_private", **self._ledger(view), turn=turn, budget=budget, opening=OPENING_PRIVATE if opening else "")
+        tail = self.prompts.render(self.private_template, **self._ledger(view), turn=turn, budget=budget, opening=OPENING_PRIVATE if opening else "")
         return self._prefix(view) + [{"role": "user", "content": tail}]
 
     def core_messages(self, view: AgentView, target_tokens: int, turn: int, opening: bool = False) -> list[dict[str, Any]]:
-        tail = self.prompts.render("turn_post", **self._ledger(view), turn=turn, target_tokens=target_tokens, opening=OPENING if opening else "")
+        tail = self.prompts.render(self.post_template, **self._ledger(view), turn=turn, target_tokens=target_tokens, opening=OPENING if opening else "")
         return self._prefix(view) + [{"role": "user", "content": tail}]
 
     async def think(self, view: AgentView, budget: int, ctx: CallContext, *, turn: int, opening: bool = False) -> Completion:

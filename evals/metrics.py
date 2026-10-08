@@ -91,7 +91,7 @@ def summarize(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "no_answer_rate": mean(r["final_answer"] is None for r in rows) if rows else None,
         "tokens_mean": {k: _mean(rows, "tokens", k) for k in sorted({k for r in rows for k in r.get("tokens", {})})},
     }
-    dialogue = [r for r in rows if r.get("method") == "dialogue"]
+    dialogue = [r for r in rows if "answer_trajectory" in r]  # dialogue and self-refine runs
     if dialogue:
         flips: Counter = Counter()
         for r in dialogue:

@@ -1,0 +1,1 @@
+MODE: PRIVATE WORK, before your post for turn {turn}. You have about {budget} tokens. Terse notes only; no trailer.
