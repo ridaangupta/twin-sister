@@ -10,13 +10,13 @@ baselines, full call-level traces, and pre-registered confirmatory tests.
 - **Full findings, decision log and friction log:** [`docs/FINDINGS.md`](docs/FINDINGS.md)
 - **Current plan:** [`docs/PLAN_v2.md`](docs/PLAN_v2.md) · related work: [`docs/related_work.md`](docs/related_work.md)
 
-## Current status (2026-10-08)
+## Current status (2026-10-09)
 
 | Finding | Evidence | Status |
 |---|---|---|
 | With hidden reasoning **off** (all reasoning visible), the dialogue beat cost-matched self-consistency: **0.915 vs 0.812** (+10.2 pts, 95% CI [+6.0, +14.5], p < 0.0001) on 400 held-out problems | [`analysis/preregistration_test400.md`](analysis/preregistration_test400.md) → [`analysis/results/test400_report.md`](analysis/results/test400_report.md) | Pre-registered, confirmed |
 | A **single call with hidden reasoning on** beats the dialogue at about a quarter of its cost (0.970–1.000 vs 0.915 on dev) | [`analysis/results/cost_matching.md`](analysis/results/cost_matching.md), [`docs/FINDINGS.md`](docs/FINDINGS.md) §16 | Dev-stage; the claim is now scoped to visible reasoning |
-| Against **all** cost-matched baselines (self-consistency, k attempts + judge, self-refine, reasoning-on vote) on 1,200 fresh problems | [`analysis/preregistration_test1200.md`](analysis/preregistration_test1200.md) | Pre-registered, **running** |
+| Against **all** cost-matched baselines on 1,200 fresh problems: dialogue 0.928 beats self-consistency 0.812 (+11.6), k attempts + judge 0.854 (+7.4) and self-refine 0.897 (+3.1); a reasoning-on vote beats the dialogue, 0.992 (−6.3), as predicted | [`analysis/preregistration_test1200.md`](analysis/preregistration_test1200.md) → [`analysis/results/test1200_report.md`](analysis/results/test1200_report.md) | Pre-registered, confirmed (cost drift noted in the report) |
 | The gain comes from **disagreement between independent opening posts**: shared wrong answers were never recovered (0 of 28); different wrong answers were recovered 36–54% of the time; answer switches moved toward the correct answer 81 times and away 4 times | [`analysis/results/exploratory_v1.md`](analysis/results/exploratory_v1.md) | Exploratory |
 
 **In one sentence:** when a model must reason in visible text, two agents that solve independently and then

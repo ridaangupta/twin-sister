@@ -725,3 +725,37 @@ easier data" check rather than a test for gains.
 - The runner's full-split guard refused the sampled dev set until `sample` and the template-level dev split
   were recognised.
 - The reasoning-on config needed an explicit `budget`.
+
+---
+
+## 18. Addendum (2026-10-09): visible-reasoning confirmatory test (test1200), pre-registered
+
+`analysis/preregistration_test1200.md` → `analysis/results/test1200_report.md`. All four primary
+claims are supported (Holm-corrected, exact McNemar, 1,200 fresh problems):
+
+| | Dialogue vs | Dialogue | Other | Difference (95% CI) | Discordant | Holm p |
+|---|---|---|---|---|---|---|
+| P1 | self-consistency, cost-matched | 0.928 | 0.812 | +11.6 [+9.2, +13.9] | 173 / 34 | 5e-23 |
+| P2 | k attempts + judge, cost-matched | 0.928 | 0.854 | +7.4 [+5.2, +9.6] | 131 / 42 | 2e-11 |
+| P3 | self-refine with two drafts, cost-matched | 0.928 | 0.897 | +3.1 [+1.2, +5.1] | 91 / 54 | 0.003 |
+| P4 | reasoning-on vote, cost-matched (predicted: dialogue lower) | 0.928 | 0.992 | −6.3 [−7.8, −4.8] | 5 / 81 | 3e-18 |
+
+- **16-step problems (secondary):**
+  - versus self-consistency +15.0, versus the judge +10.0, versus reasoning-on −10.2, all significant;
+  - versus self-refine +2.8, not significant (p = 0.11).
+- **WS1 hypothesis on fresh data:**
+  - openings with the same wrong answer: 2 of 16 recovered (12%);
+  - different wrong answers: 56 of 115 recovered (49%);
+  - Fisher p = 0.007 (descriptive).
+- **Deviation:** the dialogue's realized cost rose 12% over dev, entirely from degraded prompt-cache hit
+  rates caused by an API outage and a long suspension. At the dev cache mix the baselines are at 0.99–1.08×
+  its cost, and on generated tokens they received 42–68% more. See the report's notes.
+- **Friction:**
+  - API outage (909 failed dialogue problems, re-run);
+  - credits exhausted mid-run (347 self-refine problems, re-run after a top-up);
+  - a 30-minute scheduled resume never fired, probably because the machine slept;
+  - the first suspend pattern (`pgrep -f "python -m"`) missed the `python3` workers.
+
+**Bottom line.** With reasoning visible, two independent agents that then argue beat cost-matched voting,
+judging and self-refinement. With hidden reasoning on, a single-model reasoning vote beats the dialogue
+decisively at the same cost.
