@@ -127,6 +127,38 @@ Claim extraction: 6618 value claims from 727/829 posts. An agent with no wrong c
 | distractor value (harmless) | 1 | 1 | 0 | 0 | 1 |
 | misread given value | 1 | 0 | 0 | 1 | 1 |
 
+## syn_test1200_dialogue (`20261008T203731Z_syn_test1200_dialogue`, 1200 problems)
+
+### 1a. Both opening posts wrong
+
+| openings | problems | final answer correct | recovery |
+|---|---|---|---|
+| same wrong answer | 16 | 2 | 12% |
+| different wrong answers (or none) | 115 | 56 | 49% |
+
+### 1b. Direction of answer switches
+
+| agent | to correct | away from correct | wrong to wrong | total |
+|---|---|---|---|---|
+| A | 131 | 8 | 24 | 163 |
+| B | 113 | 8 | 19 | 140 |
+| both | 244 | 16 | 43 | 303 |
+
+### 1c. First numeric error per agent, by type
+
+Claim extraction: 40169 value claims from 4347/5020 posts. An agent with no wrong claim, or whose working could not be parsed, has no row.
+
+| error type | agents | corrected by partner | corrected by self | never corrected | final answer correct |
+|---|---|---|---|---|---|
+| implicit total | 185 | 74 | 22 | 89 | 113 |
+| arithmetic or unexplained | 140 | 61 | 26 | 53 | 110 |
+| misread relation | 34 | 14 | 5 | 15 | 23 |
+| wrong operand | 25 | 10 | 7 | 8 | 19 |
+| distractor value (harmless) | 6 | 1 | 0 | 5 | 3 |
+| backward step | 5 | 0 | 1 | 4 | 5 |
+| misread given value | 4 | 0 | 0 | 4 | 4 |
+| distractor used as operand | 2 | 1 | 0 | 1 | 1 |
+
 ## Notes on method
 
 - 1a uses the answers after the first round (turn 1). "Different wrong answers" includes an opening with no answer.

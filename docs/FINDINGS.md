@@ -759,3 +759,36 @@ claims are supported (Holm-corrected, exact McNemar, 1,200 fresh problems):
 **Bottom line.** With reasoning visible, two independent agents that then argue beat cost-matched voting,
 judging and self-refinement. With hidden reasoning on, a single-model reasoning vote beats the dialogue
 decisively at the same cost.
+
+---
+
+## 19. Project closed (2026-10-09)
+
+**What was learned:**
+1. With reasoning visible, two same-model agents that write independent openings and then argue beat every
+   cost-matched single-model alternative tested:
+   - self-consistency +11.6
+   - k attempts + judge +7.4
+   - self-refine from two independent drafts +3.1
+
+   These come from 1,200 pre-registered problems, and a 400-problem test replicates the self-consistency result.
+2. With hidden reasoning on, a single model reasoning internally beats the dialogue clearly at the same cost
+   (−6.3), and one call is enough at a quarter of the cost.
+3. The gain comes from disagreement between independent attempts:
+   - shared wrong answers are almost never fixed (2 of 16);
+   - different wrong answers often are (56 of 115);
+   - answer switches move toward the truth (244 to 16).
+4. The partner's objective wording barely matters; independence and visible, checkable working do.
+
+**Final artifacts:** `docs/FINAL_REPORT.md` (also published as the research report),
+`analysis/results/test1200_report.md`, `analysis/results/test400_report.md`, `analysis/results/exploratory_v1.md`,
+`analysis/results/cost_matching.md`.
+
+**Not pursued:** PLAN_v2 WS5 and WS6, the reasoning-on dialogue question, the learned controller, and finance tasks.
+They are listed as next steps in the final report.
+
+**Total API spend:** about $36 billed on `gpt-5.6-luna` (excluding local-cache replays), plus about $3 for the
+one-off model probe.
+
+**Friction at close:** running `explore_logs.py` on one run overwrote the multi-run exploratory report. It was
+regenerated across all five runs before committing; the hand-labelling sample was resampled and is still unlabelled.

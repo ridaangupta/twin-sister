@@ -5,12 +5,16 @@ same budget?** This repo is a research harness for testing that: a two-agent dia
 shared and private memory, procedurally generated problems that can't have been memorized, cost-matched
 baselines, full call-level traces, and pre-registered confirmatory tests.
 
-- **Research report** (short, for readers): [Dialogic Reasoning: two agents beat one at equal cost](https://claude.ai/artifact/UfTK6FAnYTNi3Ua1vPwGKY)
-  — note: written before the stronger baselines below; see *Current status*.
-- **Full findings, decision log and friction log:** [`docs/FINDINGS.md`](docs/FINDINGS.md)
-- **Current plan:** [`docs/PLAN_v2.md`](docs/PLAN_v2.md) · related work: [`docs/related_work.md`](docs/related_work.md)
+> **Status: closed (2026-10-09).** The research question is answered within its scope; remaining work is listed
+> as next steps in the final report.
 
-## Current status (2026-10-09)
+- **Final research report:** [Dialogic Reasoning: final report](https://claude.ai/artifact/UfTK6FAnYTNi3Ua1vPwGKY)
+  · markdown copy in the repo: [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md)
+- **Full findings, decision log and friction log:** [`docs/FINDINGS.md`](docs/FINDINGS.md)
+- **Plans:** [`docs/PLAN.md`](docs/PLAN.md) (v1, built) · [`docs/PLAN_v2.md`](docs/PLAN_v2.md) (v2, partly run) ·
+  related work: [`docs/related_work.md`](docs/related_work.md)
+
+## Findings (final)
 
 | Finding | Evidence | Status |
 |---|---|---|
@@ -20,8 +24,12 @@ baselines, full call-level traces, and pre-registered confirmatory tests.
 | The gain comes from **disagreement between independent opening posts**: shared wrong answers were never recovered (0 of 28); different wrong answers were recovered 36–54% of the time; answer switches moved toward the correct answer 81 times and away 4 times | [`analysis/results/exploratory_v1.md`](analysis/results/exploratory_v1.md) | Exploratory |
 
 **In one sentence:** when a model must reason in visible text, two agents that solve independently and then
-argue beat voting at equal cost; when hidden reasoning is available, a single reasoning call is better and
-cheaper on these problems.
+argue beat voting, judging and self-refinement at equal cost; when hidden reasoning is available, a single model
+reasoning internally is better and cheaper on these problems.
+
+**Not pursued** (see the final report's *Next steps*): mechanism ablations on a dedicated set, a difficulty sweep
+from 8 to 32 steps, a second model, GSM-Symbolic P2 as a no-harm check, dialogue between reasoning-on agents,
+and the learned turn controller. Configs, frozen sets and loaders for these are in the repo.
 
 ## How it works
 

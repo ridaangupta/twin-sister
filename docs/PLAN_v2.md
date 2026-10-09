@@ -1,6 +1,9 @@
 # Plan v2: making the claim robust, then testing whether it generalizes
 
-Status: proposed, 2026-10-08. Builds on `docs/FINDINGS.md` and the pre-registered result in
+Status: **closed 2026-10-09.** Done: WS1 (exploratory analyses), WS2 (infrastructure), WS3 (stronger baselines,
+cost-matched), WS7 (related work), and WS4 rescoped to visible reasoning and confirmed (`analysis/results/test1200_report.md`).
+Not pursued: WS5 ablations and WS6 generalization; their configs, frozen sets and loaders are ready. See
+`docs/FINAL_REPORT.md`, *Next steps*. Originally proposed 2026-10-08. Builds on `docs/FINDINGS.md` and the pre-registered result in
 `analysis/results/test400_report.md`: dialogue 0.915 vs cost-matched self-consistency 0.812.
 
 **Goal:** before publishing, show that the dialogue's advantage survives the strongest baselines a
